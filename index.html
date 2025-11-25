@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Navegador FE - Base de Conocimiento</title>
+
+<!-- ===== ESTILOS ===== -->
+<style>
+    body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #f5f7fa;
+        margin: 0;
+        padding: 0;
+        color: #334;
+    }
+
+    header {
+        background: white;
+        padding: 20px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+        position: sticky;
+        top: 0;
+        z-index: 5;
+    }
+
+    h1 {
+        margin: 0;
+        font-size: 26px;
+        color: #0f4c81;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    /* Buscador */
+    #searchBar {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        border-radius: 10px;
+        border: 1px solid #ccd5e0;
+        margin-top: 15px;
+        outline: none;
+        transition: all .25s;
+    }
+    #searchBar:focus {
+        border-color: #0f4c81;
+        box-shadow: 0 0 4px #0f4c8122;
+    }
+
+    /* Grid resultados */
+    .results {
+        margin-top: 30px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 18px;
+    }
+
+    .card {
+        background: white;
+        padding: 18px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        cursor: pointer;
+        transition: all .25s;
+    }
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+
+    .card h3 {
+        margin: 0;
+        color: #0f4c81;
+        font-size: 18px;
+    }
+    .card p {
+        margin-top: 6px;
+        font-size: 14px;
+        color: #555;
+    }
+
+    /* Modal detalle */
+    #modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: #0007;
+        backdrop-filter: blur(3px);
+        padding: 40px 20px;
+        overflow-y: auto;
+    }
+
+    .modal-content {
+        max-width: 800px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+    }
+
+    .modal-content h2 {
+        margin-top: 0;
+        color: #0f4c81;
+    }
+
+    #closeModal {
+        float: right;
+        cursor: pointer;
+        padding: 8px 14px;
+        border: none;
+        background: #0f4c81;
+        color: white;
+        border-radius: 6px;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>📘 Navegador FE – Base de Conocimiento</h1>
+    <input id="searchBar" placeholder="Buscar por palabra clave, categoría, procedimiento, SBS…" />
+</header>
+
+<div class="container">
+    <div id="results" class="results"></div>
+</div>
+
+<!-- ===== MODAL DETALLE ===== -->
+<div id="modal">
+    <div class="modal-content">
+        <button id="closeModal">Cerrar</button>
+        <h2 id="modalTitle"></h2>
+        <p><b id="modalCategory"></b></p>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<!-- ===== LÓGICA FIREBASE + BUSCADOR ===== -->
+<script type="module">
+
+/* ===== Importar Firebase ===== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ===== CONFIGURACIÓN REAL DE TU PROYECTO ===== */
+const firebaseConfig = {
+    apiKey: "AIzaSyBL1qT2tLfFTJ_f_3apv_sxKnn28u0nccs",
+    authDomain: "financiera-efectiva-kb.firebaseapp.com",
+    projectId: "financiera-efectiva-kb",
+    storageBucket: "financiera-efectiva-kb.firebasestorage.app",
+    messagingSenderId: "508397908196",
+    appId: "1:508397908196:web:31d28a73ef56160963fcf1"
+};
+
+/* ===== Inicializar Firebase ===== */
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ===== VARIABLES ===== */
+let articulos = [];
+const resultsEl = document.getElementById("results");
+const searchBar = document.getElementById("searchBar");
+
+/* ===== RENDER DE RESULTADOS ===== */
+function renderResults(items) {
+    resultsEl.innerHTML = items.map(a => `
+        <div class="card" onclick="abrir('${a.id}')">
+            <h3>${a.titulo}</h3>
+            <p><b>${a.categoria}</b></p>
+            <p>${a.resumen}</p>
+        </div>
+    `).join("");
+}
+
+/* ===== ABRIR DETALLE ===== */
+window.abrir = function(id) {
+    const art = articulos.find(x => x.id === id);
+    document.getElementById("modalTitle").innerHTML = art.titulo;
+    document.getElementById("modalCategory").innerHTML = art.categoria;
+    document.getElementById("modalContent").innerHTML = art.contenido;
+    document.getElementById("modal").style.display = "block";
+};
+
+document.getElementById("closeModal").addEventListener("click", () => {
+    document.getElementById("modal").style.display = "none";
+});
+
+/* ===== CARGAR ARTÍCULOS DESDE FIRESTORE ===== */
+async function cargarArticulos() {
+    const snap = await getDocs(collection(db, "articulos"));
+
+    articulos = snap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+
+    console.log("🔥 Artículos cargados desde Firestore:", articulos);
+
+    renderResults(articulos);
+}
+
+cargarArticulos();
+
+/* ===== BUSCADOR ===== */
+searchBar.addEventListener("input", () => {
+    const q = searchBar.value.toLowerCase();
+
+    const filtrado = articulos.filter(a =>
+        a.titulo.toLowerCase().includes(q) ||
+        a.resumen.toLowerCase().includes(q) ||
+        a.categoria.toLowerCase().includes(q) ||
+        (a.contenido || "").toLowerCase().includes(q)
+    );
+
+    renderResults(filtrado);
+});
+
+</script>
+
+</body>
+</html>
