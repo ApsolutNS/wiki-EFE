@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Admin FE - Gestión de Artículos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #f5f7fa;
+        margin: 0;
+        padding: 0;
+        color: #333;
+    }
+
+    header {
+        background: #0f4c81;
+        padding: 15px;
+        color: white;
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    /* Tabla */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    th, td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        font-size: 14px;
+    }
+
+    th {
+        background: #e8eff7;
+        font-weight: bold;
+    }
+
+    tr:hover td {
+        background: #f5f9ff;
+    }
+
+    button {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        background: #0f4c81;
+        color: white;
+        font-size: 14px;
+    }
+
+    .delete-btn {
+        background: #c62828;
+    }
+
+    .form-box {
+        background: white;
+        padding: 20px;
+        margin-top: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+
+    input, textarea, select {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+    }
+
+    textarea {
+        height: 150px;
+    }
+
+    .row {
+        display: flex;
+        gap: 10px;
+    }
+
+    .half {
+        flex: 1;
+    }
+
+    .save-btn {
+        background: #0f8f4c;
+    }
+
+</style>
+</head>
+<body>
+
+<header>Panel Administrador – FE Base de Conocimiento</header>
+
+<div class="container">
+
+    <h2>Listado de Artículos</h2>
+    <table id="tablaArticulos">
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Categoría</th>
+                <th>Visible</th>
+                <th>Editar</th>
+                <th>Eliminar</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <br><br>
+
+    <h2>Crear / Editar Artículo</h2>
+
+    <div class="form-box">
+        <input type="hidden" id="articuloId">
+
+        <label>Título</label>
+        <input id="titulo" placeholder="Ej: Plazo SBS…">
+
+        <label>Categoría</label>
+        <select id="categoria">
+            <option value="">Seleccione</option>
+            <option>Norma Regulatoria</option>
+            <option>Monitoreo de Calidad</option>
+            <option>Speech</option>
+            <option>Flujos</option>
+            <option>Productos</option>
+            <option>General</option>
+        </select>
+
+        <label>Resumen</label>
+        <input id="resumen" placeholder="Breve descripción del contenido">
+
+        <label>Contenido (HTML permitido)</label>
+        <textarea id="contenido"></textarea>
+
+        <label>Visible para agentes</label>
+        <select id="visibleAgentes">
+            <option value="true">Sí</option>
+            <option value="false">No</option>
+        </select>
+
+        <br><br>
+        <button class="save-btn" onclick="guardarArticulo()">Guardar Artículo</button>
+    </div>
+
+</div>
+
+
+<!-- FIREBASE -->
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { 
+    getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBL1qT2tLfFTJ_f_3apv_sxKnn28u0nccs",
+    authDomain: "financiera-efectiva-kb.firebaseapp.com",
+    projectId: "financiera-efectiva-kb",
+    storageBucket: "financiera-efectiva-kb.firebasestorage.app",
+    messagingSenderId: "508397908196",
+    appId: "1:508397908196:web:31d28a73ef56160963fcf1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let coleccion = collection(db, "articulos");
+
+/* ==========================
+   CARGAR ARTÍCULOS
+   ========================== */
+async function cargarTabla() {
+    const tbody = document.querySelector("#tablaArticulos tbody");
+    tbody.innerHTML = "";
+
+    const snap = await getDocs(coleccion);
+
+    snap.forEach(docu => {
+        const art = docu.data();
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${art.titulo}</td>
+                <td>${art.categoria}</td>
+                <td>${art.visibleAgentes ? "Sí" : "No"}</td>
+                <td><button onclick="editar('${docu.id}')">Editar</button></td>
+                <td><button class="delete-btn" onclick="eliminar('${docu.id}')">Eliminar</button></td>
+            </tr>
+        `;
+    });
+}
+
+window.editar = async function(id) {
+    const snap = await getDocs(coleccion);
+    
+    snap.forEach(docu => {
+        if (docu.id === id) {
+            const art = docu.data();
+            document.getElementById("articuloId").value = id;
+            document.getElementById("titulo").value = art.titulo;
+            document.getElementById("categoria").value = art.categoria;
+            document.getElementById("resumen").value = art.resumen;
+            document.getElementById("contenido").value = art.contenido;
+            document.getElementById("visibleAgentes").value = art.visibleAgentes;
+        }
+    });
+
+    window.scrollTo(0, document.body.scrollHeight);
+};
+
+window.eliminar = async function(id) {
+    const respuesta = confirm("¿Eliminar este artículo?");
+    if (!respuesta) return;
+
+    await deleteDoc(doc(db, "articulos", id));
+    alert("Artículo eliminado");
+    cargarTabla();
+};
+
+/* ==========================
+   GUARDAR ARTÍCULO
+   ========================== */
+window.guardarArticulo = async function() {
+    const id = document.getElementById("articuloId").value;
+    const data = {
+        titulo: document.getElementById("titulo").value,
+        categoria: document.getElementById("categoria").value,
+        resumen: document.getElementById("resumen").value,
+        contenido: document.getElementById("contenido").value,
+        visibleAgentes: document.getElementById("visibleAgentes").value === "true",
+        fecha: new Date()
+    };
+
+    if (!data.titulo || !data.categoria || !data.resumen) {
+        alert("Completa todos los campos importantes.");
+        return;
+    }
+
+    if (id) {
+        await updateDoc(doc(db, "articulos", id), data);
+        alert("Artículo actualizado correctamente.");
+    } else {
+        await addDoc(coleccion, data);
+        alert("Artículo creado correctamente.");
+    }
+
+    document.getElementById("articuloId").value = "";
+    document.querySelector("form")?.reset();
+
+    cargarTabla();
+};
+
+/* Inicializar tabla */
+cargarTabla();
+
+</script>
+
+</body>
+</html>
