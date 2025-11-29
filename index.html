@@ -52,7 +52,7 @@
         box-shadow: 0 0 4px #0f4c8122;
     }
 
-    /* Grid resultados */
+    /* Grid de resultados */
     .results {
         margin-top: 30px;
         display: grid;
@@ -68,6 +68,7 @@
         cursor: pointer;
         transition: all .25s;
     }
+
     .card:hover {
         transform: translateY(-3px);
         box-shadow: 0 6px 16px rgba(0,0,0,0.12);
@@ -78,13 +79,14 @@
         color: #0f4c81;
         font-size: 18px;
     }
+
     .card p {
         margin-top: 6px;
         font-size: 14px;
         color: #555;
     }
 
-    /* Modal detalle */
+    /* Modal */
     #modal {
         display: none;
         position: fixed;
@@ -131,7 +133,7 @@
     <div id="results" class="results"></div>
 </div>
 
-<!-- ===== MODAL DETALLE ===== -->
+<!-- ===== MODAL ===== -->
 <div id="modal">
     <div class="modal-content">
         <button id="closeModal">Cerrar</button>
@@ -141,14 +143,12 @@
     </div>
 </div>
 
-<!-- ===== LÓGICA FIREBASE + BUSCADOR ===== -->
+<!-- ===== FIREBASE + LÓGICA ===== -->
 <script type="module">
-
-/* ===== Importar Firebase ===== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* ===== CONFIGURACIÓN REAL DE TU PROYECTO ===== */
+/* ===== CONFIG FIREBASE ===== */
 const firebaseConfig = {
     apiKey: "AIzaSyBL1qT2tLfFTJ_f_3apv_sxKnn28u0nccs",
     authDomain: "financiera-efectiva-kb.firebaseapp.com",
@@ -158,16 +158,14 @@ const firebaseConfig = {
     appId: "1:508397908196:web:31d28a73ef56160963fcf1"
 };
 
-/* ===== Inicializar Firebase ===== */
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ===== VARIABLES ===== */
 let articulos = [];
 const resultsEl = document.getElementById("results");
 const searchBar = document.getElementById("searchBar");
 
-/* ===== RENDER DE RESULTADOS ===== */
+/* ===== RENDER ===== */
 function renderResults(items) {
     resultsEl.innerHTML = items.map(a => `
         <div class="card" onclick="abrir('${a.id}')">
@@ -178,20 +176,22 @@ function renderResults(items) {
     `).join("");
 }
 
-/* ===== ABRIR DETALLE ===== */
+/* ===== MODAL ===== */
 window.abrir = function(id) {
-    const art = articulos.find(x => x.id === id);
+    const art = articulos.find(a => a.id === id);
+    if (!art) return;
+
     document.getElementById("modalTitle").innerHTML = art.titulo;
     document.getElementById("modalCategory").innerHTML = art.categoria;
     document.getElementById("modalContent").innerHTML = art.contenido;
     document.getElementById("modal").style.display = "block";
 };
 
-document.getElementById("closeModal").addEventListener("click", () => {
+document.getElementById("closeModal").onclick = () => {
     document.getElementById("modal").style.display = "none";
-});
+};
 
-/* ===== CARGAR ARTÍCULOS DESDE FIRESTORE ===== */
+/* ===== CARGAR FIRESTORE ===== */
 async function cargarArticulos() {
     const snap = await getDocs(collection(db, "articulos"));
 
@@ -200,14 +200,13 @@ async function cargarArticulos() {
         ...doc.data()
     }));
 
-    console.log("🔥 Artículos cargados desde Firestore:", articulos);
-
+    console.log("🔥 Artículos cargados:", articulos);
     renderResults(articulos);
 }
 
 cargarArticulos();
 
-/* ===== BUSCADOR ===== */
+/* ===== BUSCAR ===== */
 searchBar.addEventListener("input", () => {
     const q = searchBar.value.toLowerCase();
 
@@ -220,7 +219,6 @@ searchBar.addEventListener("input", () => {
 
     renderResults(filtrado);
 });
-
 </script>
 
 </body>
