@@ -14,7 +14,6 @@
         padding: 0;
         color: #334;
     }
-
     header {
         background: white;
         padding: 20px;
@@ -23,13 +22,11 @@
         top: 0;
         z-index: 5;
     }
-
     h1 {
         margin: 0;
         font-size: 26px;
         color: #0f4c81;
     }
-
     .container {
         max-width: 1100px;
         margin: auto;
@@ -52,7 +49,7 @@
         box-shadow: 0 0 4px #0f4c8122;
     }
 
-    /* Grid de resultados */
+    /* Resultados */
     .results {
         margin-top: 30px;
         display: grid;
@@ -68,18 +65,15 @@
         cursor: pointer;
         transition: all .25s;
     }
-
     .card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.15);
     }
-
     .card h3 {
         margin: 0;
         color: #0f4c81;
         font-size: 18px;
     }
-
     .card p {
         margin-top: 6px;
         font-size: 14px;
@@ -92,12 +86,11 @@
         position: fixed;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background: #0007;
+        background: #0008;
         backdrop-filter: blur(3px);
         padding: 40px 20px;
         overflow-y: auto;
     }
-
     .modal-content {
         max-width: 800px;
         margin: auto;
@@ -105,12 +98,6 @@
         padding: 30px;
         border-radius: 12px;
     }
-
-    .modal-content h2 {
-        margin-top: 0;
-        color: #0f4c81;
-    }
-
     #closeModal {
         float: right;
         cursor: pointer;
@@ -122,8 +109,8 @@
     }
 </style>
 </head>
-<body>
 
+<body>
 <header>
     <h1>📘 Navegador FE – Base de Conocimiento</h1>
     <input id="searchBar" placeholder="Buscar por palabra clave, categoría, procedimiento, SBS…" />
@@ -148,7 +135,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* ===== CONFIG FIREBASE ===== */
+/* === CONFIG FIREBASE === */
 const firebaseConfig = {
     apiKey: "AIzaSyBL1qT2tLfFTJ_f_3apv_sxKnn28u0nccs",
     authDomain: "financiera-efectiva-kb.firebaseapp.com",
@@ -161,11 +148,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* Variables */
 let articulos = [];
 const resultsEl = document.getElementById("results");
 const searchBar = document.getElementById("searchBar");
 
-/* ===== RENDER ===== */
+/* Render */
 function renderResults(items) {
     resultsEl.innerHTML = items.map(a => `
         <div class="card" onclick="abrir('${a.id}')">
@@ -174,52 +162,89 @@ function renderResults(items) {
             <p>${a.resumen}</p>
         </div>
     `).join("");
+
+    if (items.length === 0) {
+        resultsEl.innerHTML = `<p>No se encontraron resultados.</p>`;
+    }
 }
 
-/* ===== MODAL ===== */
+/* Modal */
 window.abrir = function(id) {
     const art = articulos.find(a => a.id === id);
     if (!art) return;
-
     document.getElementById("modalTitle").innerHTML = art.titulo;
     document.getElementById("modalCategory").innerHTML = art.categoria;
     document.getElementById("modalContent").innerHTML = art.contenido;
     document.getElementById("modal").style.display = "block";
 };
-
 document.getElementById("closeModal").onclick = () => {
     document.getElementById("modal").style.display = "none";
 };
 
+/* ===== LIMPIAR HTML PARA LA BUSQUEDA ===== */
+function limpiarHTML(texto) {
+    return texto
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
+/* ===== BUSQUEDA INTELIGENTE ===== */
+searchBar.addEventListener("input", () => {
+    const q = searchBar.value.trim().toLowerCase();
+    if (q.length === 0) {
+        renderResults(articulos);
+        return;
+    }
+
+    const palabras = q.split(" ");
+
+    const resultados = articulos
+        .map(a => {
+            const titulo = a.titulo.toLowerCase();
+            const resumen = a.resumen.toLowerCase();
+            const categoria = a.categoria.toLowerCase();
+            const contenidoLimpio = limpiarHTML(a.contenido || "");
+
+            let score = 0;
+
+            const PESOS = {
+                titulo: 4,
+                resumen: 3,
+                categoria: 2,
+                contenido: 1
+            };
+
+            palabras.forEach(word => {
+                if (titulo.includes(word)) score += PESOS.titulo;
+                if (resumen.includes(word)) score += PESOS.resumen;
+                if (categoria.includes(word)) score += PESOS.categoria;
+                if (contenidoLimpio.includes(word)) score += PESOS.contenido;
+            });
+
+            return { ...a, score };
+        })
+        .filter(a => a.score > 0)
+        .sort((a, b) => b.score - a.score);
+
+    renderResults(resultados);
+});
+
 /* ===== CARGAR FIRESTORE ===== */
 async function cargarArticulos() {
     const snap = await getDocs(collection(db, "articulos"));
-
     articulos = snap.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
     }));
 
     console.log("🔥 Artículos cargados:", articulos);
+
     renderResults(articulos);
 }
 
 cargarArticulos();
-
-/* ===== BUSCAR ===== */
-searchBar.addEventListener("input", () => {
-    const q = searchBar.value.toLowerCase();
-
-    const filtrado = articulos.filter(a =>
-        a.titulo.toLowerCase().includes(q) ||
-        a.resumen.toLowerCase().includes(q) ||
-        a.categoria.toLowerCase().includes(q) ||
-        (a.contenido || "").toLowerCase().includes(q)
-    );
-
-    renderResults(filtrado);
-});
 </script>
-
 </body>
 </html>
