@@ -4,163 +4,470 @@
 <meta charset="UTF-8">
 <title>Admin FE - Gestión de Artículos</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- ===== ESTILOS ===== -->
+
+<!-- ========== ESTILOS ========== -->
 <style>
-    body {
-        font-family: "Segoe UI", Arial, sans-serif;
-        background: #f5f7fa;
-        margin: 0;
-        padding: 0;
-        color: #333;
+    :root{
+        --bg:#f5f7fa;
+        --text:#111827;
+        --card:#ffffff;
+        --accent:#0f4c81;
+        --accent-soft:#2563eb;
+        --border:#e5e7eb;
+        --shadow:0 4px 12px rgba(15,23,42,0.08);
+        --danger:#dc2626;
+        --muted:#6b7280;
     }
-    header {
-        background: #0f4c81;
-        padding: 15px;
-        color: white;
-        text-align: center;
-        font-size: 22px;
-        font-weight: bold;
+    body.dark{
+        --bg:#020617;
+        --text:#e5e7eb;
+        --card:#020617;
+        --accent:#38bdf8;
+        --accent-soft:#0ea5e9;
+        --border:#1f2937;
+        --shadow:0 14px 40px rgba(0,0,0,0.75);
+        --danger:#f97373;
+        --muted:#9ca3af;
     }
-    .container {
-        max-width: 1100px;
-        margin: auto;
-        padding: 20px;
+
+    *{box-sizing:border-box;margin:0;padding:0}
+
+    body{
+        font-family:"Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+        background:var(--bg);
+        color:var(--text);
+        min-height:100vh;
     }
-    /* Tabla */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+
+    header{
+        background:var(--card);
+        border-bottom:1px solid var(--border);
+        box-shadow:var(--shadow);
+        padding:14px 20px;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        position:sticky;
+        top:0;
+        z-index:20;
     }
-    th, td {
-        padding: 12px;
-        border-bottom: 1px solid #eee;
-        font-size: 14px;
+    .header-title{
+        font-size:18px;
+        font-weight:600;
+        display:flex;
+        align-items:center;
+        gap:8px;
     }
-    th {
-        background: #e8eff7;
-        font-weight: bold;
+    .header-sub{
+        font-size:12px;
+        color:var(--muted);
     }
-    tr:hover td {
-        background: #f5f9ff;
+    .pill{
+        font-size:11px;
+        padding:2px 8px;
+        border-radius:999px;
+        border:1px solid var(--border);
     }
-    button {
-        padding: 8px 14px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        background: #0f4c81;
-        color: white;
-        font-size: 14px;
+    .btn-toggle{
+        border:none;
+        border-radius:999px;
+        padding:8px 14px;
+        font-size:13px;
+        cursor:pointer;
+        background:var(--accent);
+        color:#f9fafb;
     }
-    .delete-btn {
-        background: #c62828;
+
+    .container{
+        max-width:1160px;
+        margin:0 auto;
+        padding:18px 16px 28px;
     }
-    .form-box {
-        background: white;
-        padding: 20px;
-        margin-top: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+
+    /* PANEL SUPERIOR */
+    .top-bar{
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        align-items:center;
+        justify-content:space-between;
+        margin-bottom:14px;
     }
-    input, textarea, select {
-        width: 100%;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        font-size: 14px;
+    .search-input{
+        width:260px;
+        max-width:100%;
+        padding:9px 11px;
+        border-radius:999px;
+        border:1px solid var(--border);
+        background:var(--card);
+        color:var(--text);
+        font-size:13px;
     }
-    #editor {
-        background: white;
-        height: 220px;
-        margin-bottom: 15px;
+    .btn{
+        border:none;
+        border-radius:999px;
+        padding:8px 14px;
+        font-size:13px;
+        cursor:pointer;
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        background:var(--accent-soft);
+        color:#f9fafb;
+        box-shadow:0 0 0 rgba(0,0,0,0);
+        transition:.15s;
     }
-    .save-btn {
-        background: #0f8f4c;
+    .btn:hover{
+        transform:translateY(-1px);
+        box-shadow:0 10px 20px rgba(15,23,42,0.25);
+    }
+    .btn-danger{
+        background:var(--danger);
+        color:#fee2e2;
+    }
+    .badge{
+        font-size:11px;
+        padding:3px 8px;
+        border-radius:999px;
+        border:1px solid var(--border);
+        display:inline-flex;
+        align-items:center;
+        gap:4px;
+    }
+    .badge-dot{
+        width:7px;
+        height:7px;
+        border-radius:999px;
+        background:#10b981;
+    }
+    .badge-danger .badge-dot{
+        background:var(--danger);
+    }
+
+    /* TARJETA */
+    .card{
+        background:var(--card);
+        border-radius:14px;
+        border:1px solid var(--border);
+        box-shadow:var(--shadow);
+        padding:16px 16px 18px;
+        margin-bottom:16px;
+    }
+    .card-header{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:10px;
+    }
+    .card-title{
+        font-size:15px;
+        font-weight:600;
+    }
+    .card-sub{
+        font-size:12px;
+        color:var(--muted);
+    }
+
+    /* TABLA */
+    table{
+        width:100%;
+        border-collapse:collapse;
+        font-size:12px;
+    }
+    th,td{
+        padding:8px 8px;
+        border-bottom:1px solid var(--border);
+        text-align:left;
+    }
+    th{
+        font-weight:600;
+        font-size:11px;
+        text-transform:uppercase;
+        letter-spacing:.05em;
+        color:var(--muted);
+    }
+    tr:hover td{
+        background:rgba(148,163,184,0.08);
+    }
+    .actions{
+        display:flex;
+        flex-wrap:wrap;
+        gap:4px;
+    }
+    .btn-xs{
+        padding:4px 8px;
+        font-size:11px;
+        border-radius:999px;
+        border:none;
+        cursor:pointer;
+        background:rgba(148,163,184,0.18);
+        color:var(--text);
+    }
+    .btn-xs.primary{
+        background:rgba(56,189,248,0.15);
+    }
+    .btn-xs.danger{
+        background:rgba(248,113,113,0.16);
+        color:#fecaca;
+    }
+
+    /* FORMULARIO */
+    .form-grid{
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+        gap:10px 14px;
+        margin-top:6px;
+    }
+    label{
+        font-size:12px;
+        font-weight:500;
+        margin-bottom:4px;
+        display:block;
+    }
+    input,select{
+        width:100%;
+        padding:8px 9px;
+        border-radius:8px;
+        border:1px solid var(--border);
+        background:var(--bg);
+        color:var(--text);
+        font-size:13px;
+        outline:none;
+    }
+    input:focus,select:focus{
+        border-color:var(--accent-soft);
+        box-shadow:0 0 0 1px rgba(37,99,235,0.35);
+        background:var(--card);
+    }
+    #editor{
+        background:var(--card);
+        border-radius:8px;
+        border:1px solid var(--border);
+        height:220px;
+        margin-top:6px;
+    }
+    .form-actions{
+        margin-top:14px;
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+    }
+
+    /* MODAL PREVIEW */
+    #modal{
+        display:none;
+        position:fixed;
+        inset:0;
+        background:rgba(15,23,42,0.8);
+        backdrop-filter:blur(3px);
+        padding:40px 18px;
+        overflow-y:auto;
+        z-index:40;
+    }
+    .modal-inner{
+        max-width:860px;
+        margin:0 auto;
+        background:var(--card);
+        border-radius:14px;
+        border:1px solid var(--border);
+        box-shadow:var(--shadow);
+        padding:22px 20px 26px;
+    }
+    .modal-header{
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        gap:10px;
+        margin-bottom:10px;
+    }
+    .modal-title{
+        font-size:18px;
+        font-weight:600;
+    }
+    .modal-meta{
+        font-size:12px;
+        color:var(--muted);
+    }
+    .btn-close{
+        border:none;
+        padding:6px 10px;
+        border-radius:999px;
+        font-size:12px;
+        cursor:pointer;
+        background:rgba(15,23,42,0.1);
+        color:var(--text);
+    }
+    .modal-body{
+        font-size:13px;
+        margin-top:6px;
+    }
+    .copy-btn{
+        border:none;
+        padding:6px 12px;
+        border-radius:999px;
+        font-size:12px;
+        cursor:pointer;
+        background:rgba(56,189,248,0.15);
+        margin-top:4px;
+    }
+
+    @media(max-width:720px){
+        header{
+            flex-direction:column;
+            align-items:flex-start;
+            gap:6px;
+        }
+        .top-bar{
+            flex-direction:column;
+            align-items:flex-start;
+        }
+        .search-input{width:100%}
     }
 </style>
 
-<!-- QUIILL -->
+<!-- QUILL -->
 <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 
 </head>
 <body>
 
-<header>Panel Administrador – FE Base de Conocimiento</header>
+<header>
+    <div>
+        <div class="header-title">
+            🛠️ Admin FE – Base de Conocimiento
+            <span class="pill">Panel interno</span>
+        </div>
+        <div class="header-sub">Crear, editar y destacar artículos para los agentes.</div>
+    </div>
+    <button id="themeToggle" class="btn-toggle">Modo oscuro</button>
+</header>
 
 <div class="container">
 
-    <h2>Listado de Artículos</h2>
+    <!-- PANEL LISTADO -->
+    <section class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Artículos registrados</div>
+                <div class="card-sub">Gestiona los contenidos de tu base de conocimiento.</div>
+            </div>
+            <button class="btn" id="btnNuevo">➕ Nuevo artículo</button>
+        </div>
 
-    <table id="tablaArticulos">
-        <thead>
-            <tr>
-                <th>Título</th>
-                <th>Categoría</th>
-                <th>Visible</th>
-                <th>Editar</th>
-                <th>Eliminar</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+        <div class="top-bar">
+            <input id="searchTabla" class="search-input" placeholder="Filtrar por título, categoría o resumen…" />
+            <div class="badge">
+                <span class="badge-dot"></span>
+                <span id="contadorArticulos">0 artículos</span>
+            </div>
+        </div>
 
-    <br><br>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Categoría</th>
+                        <th>Visible</th>
+                        <th>Destacado</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaArticulos"></tbody>
+            </table>
+        </div>
+    </section>
 
-    <h2>Crear / Editar Artículo</h2>
-    <div class="form-box">
+    <!-- PANEL FORMULARIO -->
+    <section class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title" id="formTitle">Nuevo artículo</div>
+                <div class="card-sub">Completa la información y guarda para publicarlo.</div>
+            </div>
+        </div>
 
         <input type="hidden" id="articuloId">
 
-        <label>Título</label>
-        <input id="titulo" placeholder="Ej: Plazo SBS…">
+        <div class="form-grid">
+            <div>
+                <label>Título</label>
+                <input id="titulo" placeholder="Ej. Plazo SBS para desembolso">
+            </div>
+            <div>
+                <label>Categoría</label>
+                <select id="categoria">
+                    <option value="">Seleccione</option>
+                    <option>Norma Regulatoria</option>
+                    <option>Monitoreo de Calidad</option>
+                    <option>Speech</option>
+                    <option>Flujos</option>
+                    <option>Productos</option>
+                    <option>General</option>
+                </select>
+            </div>
+            <div>
+                <label>Visible para agentes</label>
+                <select id="visibleAgentes">
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                </select>
+            </div>
+            <div>
+                <label>Destacado</label>
+                <select id="destacado">
+                    <option value="false">No</option>
+                    <option value="true">Sí</option>
+                </select>
+            </div>
+        </div>
 
-        <label>Categoría</label>
-        <select id="categoria">
-            <option value="">Seleccione</option>
-            <option>Norma Regulatoria</option>
-            <option>Monitoreo de Calidad</option>
-            <option>Speech</option>
-            <option>Flujos</option>
-            <option>Productos</option>
-            <option>General</option>
-        </select>
+        <div style="margin-top:10px;">
+            <label>Resumen</label>
+            <input id="resumen" placeholder="Breve descripción para el listado">
+        </div>
 
-        <label>Resumen</label>
-        <input id="resumen" placeholder="Breve descripción del contenido">
+        <div style="margin-top:10px;">
+            <label>Contenido (HTML con formato)</label>
+            <div id="editor"></div>
+            <input type="hidden" id="contenido">
+        </div>
 
-        <label>Contenido (HTML permitido)</label>
-        <div id="editor"></div>
-        <input type="hidden" id="contenido">
+        <div class="form-actions">
+            <button class="btn" id="btnGuardar">💾 Guardar artículo</button>
+            <button class="btn btn-danger" id="btnLimpiar">Limpiar</button>
+        </div>
+    </section>
+</div>
 
-        <label>Visible para agentes</label>
-        <select id="visibleAgentes">
-            <option value="true">Sí</option>
-            <option value="false">No</option>
-        </select>
-
-        <br><br>
-
-        <button class="save-btn" onclick="guardarArticulo()">Guardar Artículo</button>
-
+<!-- MODAL PREVIEW -->
+<div id="modal">
+    <div class="modal-inner">
+        <div class="modal-header">
+            <div>
+                <div class="modal-title" id="modalTitle"></div>
+                <div class="modal-meta" id="modalMeta"></div>
+            </div>
+            <button class="btn-close" id="btnCerrarModal">Cerrar</button>
+        </div>
+        <button class="copy-btn" id="btnCopiar">Copiar contenido</button>
+        <div class="modal-body" id="modalContent"></div>
     </div>
 </div>
 
-<!-- QUIILL -->
+<!-- QUILL -->
 <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
-<!-- FIREBASE -->
+<!-- ========== FIREBASE + LÓGICA ========== -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { 
-    getFirestore, collection, getDocs, addDoc, 
+    getFirestore, collection, getDocs, addDoc,
     doc, getDoc, updateDoc, deleteDoc 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* ===== FIREBASE CONFIG ===== */
+/* ---- FIREBASE CONFIG ---- */
 const firebaseConfig = {
     apiKey: "AIzaSyBL1qT2tLfFTJ_f_3apv_sxKnn28u0nccs",
     authDomain: "financiera-efectiva-kb.firebaseapp.com",
@@ -172,123 +479,234 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const coleccion = collection(db, "articulos");
+const colArticulos = collection(db, "articulos");
 
-/* ===== QUILL ===== */
-const quill = new Quill("#editor", { theme: "snow" });
+/* ---- QUILL ---- */
+const quill = new Quill("#editor", {
+    theme:"snow",
+    placeholder:"Escribe aquí el contenido completo del artículo…"
+});
 
-/* ==========================
+/* ---- ESTADO ---- */
+let articulosCache = [];
+
+/* =======================
    CARGAR TABLA
-   ========================== */
-async function cargarTabla() {
-    const tbody = document.querySelector("#tablaArticulos tbody");
-    tbody.innerHTML = "";
+======================= */
+async function cargarTabla(){
+    const tbody = document.getElementById("tablaArticulos");
+    tbody.innerHTML = "<tr><td colspan='6'>Cargando...</td></tr>";
 
-    const snap = await getDocs(coleccion);
+    const snap = await getDocs(colArticulos);
 
-    snap.forEach(docu => {
-        const art = docu.data();
-        tbody.innerHTML += `
-            <tr>
-                <td>${art.titulo}</td>
-                <td>${art.categoria}</td>
-                <td>${art.visibleAgentes ? "Sí" : "No"}</td>
-                <td><button onclick="editar('${docu.id}')">Editar</button></td>
-                <td><button class="delete-btn" onclick="eliminar('${docu.id}')">Eliminar</button></td>
-            </tr>
-        `;
+    articulosCache = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+    }));
+
+    // ordenar por fecha (más recientes primero)
+    articulosCache.sort((a,b)=>{
+        const fa = a.fecha ? new Date(a.fecha.toDate ? a.fecha.toDate() : a.fecha) : 0;
+        const fb = b.fecha ? new Date(b.fecha.toDate ? b.fecha.toDate() : b.fecha) : 0;
+        return fb - fa;
     });
+
+    renderTabla(articulosCache);
 }
 
-/* ==========================
-   EDITAR ARTÍCULO CORRECTO
-   ========================== */
-window.editar = async function(id) {
-    const ref = doc(db, "articulos", id);
-    const snap = await getDoc(ref);
+function renderTabla(lista){
+    const tbody = document.getElementById("tablaArticulos");
+    const contador = document.getElementById("contadorArticulos");
 
-    if (!snap.exists()) {
-        alert("El artículo no existe");
+    contador.textContent = lista.length + " artículos";
+
+    if(!lista.length){
+        tbody.innerHTML = "<tr><td colspan='6'>Sin artículos registrados aún.</td></tr>";
         return;
     }
 
-    const art = snap.data();
+    tbody.innerHTML = lista.map(a=>{
+        const fechaStr = a.fecha
+            ? new Date(a.fecha.toDate ? a.fecha.toDate() : a.fecha).toLocaleDateString("es-PE")
+            : "-";
 
-    // Llenar campos
-    document.getElementById("articuloId").value = id;
-    document.getElementById("titulo").value = art.titulo;
-    document.getElementById("categoria").value = art.categoria;
-    document.getElementById("resumen").value = art.resumen;
-    document.getElementById("visibleAgentes").value = art.visibleAgentes ? "true" : "false";
+        return `
+        <tr>
+            <td>${a.titulo || ""}</td>
+            <td>${a.categoria || ""}</td>
+            <td>${a.visibleAgentes ? "Sí" : "No"}</td>
+            <td>${a.destacado ? "⭐" : "—"}</td>
+            <td>${fechaStr}</td>
+            <td>
+                <div class="actions">
+                    <button class="btn-xs" onclick="verArticulo('${a.id}')">Ver</button>
+                    <button class="btn-xs primary" onclick="editar('${a.id}')">Editar</button>
+                    <button class="btn-xs danger" onclick="eliminar('${a.id}')">Eliminar</button>
+                </div>
+            </td>
+        </tr>`;
+    }).join("");
+}
 
-    // Cargar contenido en Quill
-    quill.root.innerHTML = art.contenido || "";
-
-    window.scrollTo(0, document.body.scrollHeight);
-};
-
-/* ==========================
-   ELIMINAR
-   ========================== */
-window.eliminar = async function(id) {
-    if (!confirm("¿Eliminar este artículo?")) return;
-
-    await deleteDoc(doc(db, "articulos", id));
-    alert("Artículo eliminado correctamente.");
-    cargarTabla();
-};
-
-/* ==========================
-   GUARDAR ARTÍCULO
-   ========================== */
-window.guardarArticulo = async function() {
-
-    // Cargar HTML desde Quill
-    document.getElementById("contenido").value = quill.root.innerHTML;
-
-    const id = document.getElementById("articuloId").value;
-
-    const data = {
-        titulo: document.getElementById("titulo").value,
-        categoria: document.getElementById("categoria").value,
-        resumen: document.getElementById("resumen").value,
-        contenido: document.getElementById("contenido").value,
-        visibleAgentes: document.getElementById("visibleAgentes").value === "true",
-        fecha: new Date()
-    };
-
-    if (!data.titulo || !data.categoria || !data.resumen) {
-        alert("Completa todos los campos importantes.");
+/* =======================
+   BUSCAR EN TABLA
+======================= */
+document.getElementById("searchTabla").addEventListener("input", e=>{
+    const q = e.target.value.trim().toLowerCase();
+    if(!q){
+        renderTabla(articulosCache);
         return;
     }
+    const filtrados = articulosCache.filter(a=>{
+        const t = (a.titulo || "").toLowerCase();
+        const r = (a.resumen || "").toLowerCase();
+        const c = (a.categoria || "").toLowerCase();
+        return t.includes(q) || r.includes(q) || c.includes(q);
+    });
+    renderTabla(filtrados);
+});
 
-    if (id) {
-        await updateDoc(doc(db, "articulos", id), data);
-        alert("Artículo actualizado.");
-    } else {
-        await addDoc(coleccion, data);
-        alert("Artículo creado.");
-    }
-
-    limpiarFormulario();
-    cargarTabla();
-};
-
-/* ==========================
-   LIMPIAR FORMULARIO
-   ========================== */
-function limpiarFormulario() {
+/* =======================
+   LIMPIAR FORM
+======================= */
+function limpiarFormulario(){
     document.getElementById("articuloId").value = "";
     document.getElementById("titulo").value = "";
     document.getElementById("categoria").value = "";
     document.getElementById("resumen").value = "";
     document.getElementById("visibleAgentes").value = "true";
+    document.getElementById("destacado").value = "false";
     quill.root.innerHTML = "";
+    document.getElementById("formTitle").textContent = "Nuevo artículo";
 }
 
-/* Inicializar tabla */
-cargarTabla();
+/* =======================
+   GUARDAR
+======================= */
+async function guardarArticulo(){
+    const id = document.getElementById("articuloId").value;
+    const data = {
+        titulo: document.getElementById("titulo").value.trim(),
+        categoria: document.getElementById("categoria").value,
+        resumen: document.getElementById("resumen").value.trim(),
+        contenido: quill.root.innerHTML,
+        visibleAgentes: document.getElementById("visibleAgentes").value === "true",
+        destacado: document.getElementById("destacado").value === "true",
+        fecha: new Date()
+    };
 
+    if(!data.titulo || !data.categoria || !data.resumen){
+        alert("Completa título, categoría y resumen.");
+        return;
+    }
+
+    if(id){
+        await updateDoc(doc(db,"articulos",id), data);
+        alert("Artículo actualizado.");
+    }else{
+        await addDoc(colArticulos, data);
+        alert("Artículo creado.");
+    }
+
+    limpiarFormulario();
+    await cargarTabla();
+}
+
+/* =======================
+   EDITAR
+======================= */
+window.editar = async function(id){
+    const ref = doc(db,"articulos",id);
+    const s = await getDoc(ref);
+    if(!s.exists()){
+        alert("No se encontró el artículo");
+        return;
+    }
+    const a = s.data();
+
+    document.getElementById("articuloId").value = id;
+    document.getElementById("titulo").value = a.titulo || "";
+    document.getElementById("categoria").value = a.categoria || "";
+    document.getElementById("resumen").value = a.resumen || "";
+    document.getElementById("visibleAgentes").value = a.visibleAgentes ? "true" : "false";
+    document.getElementById("destacado").value = a.destacado ? "true" : "false";
+    quill.root.innerHTML = a.contenido || "";
+
+    document.getElementById("formTitle").textContent = "Editar artículo";
+    window.scrollTo({top:document.body.scrollHeight, behavior:"smooth"});
+};
+
+/* =======================
+   ELIMINAR
+======================= */
+window.eliminar = async function(id){
+    if(!confirm("¿Eliminar este artículo?")) return;
+    await deleteDoc(doc(db,"articulos",id));
+    alert("Artículo eliminado.");
+    await cargarTabla();
+};
+
+/* =======================
+   VER / PREVIEW
+======================= */
+window.verArticulo = function(id){
+    const a = articulosCache.find(x=>x.id===id);
+    if(!a) return;
+    document.getElementById("modalTitle").textContent = a.titulo || "";
+    const fechaStr = a.fecha
+        ? new Date(a.fecha.toDate ? a.fecha.toDate() : a.fecha).toLocaleString("es-PE")
+        : "";
+    document.getElementById("modalMeta").textContent =
+        (a.categoria || "") + (fechaStr ? " · " + fechaStr : "");
+    document.getElementById("modalContent").innerHTML = a.contenido || "";
+    document.getElementById("modal").style.display = "block";
+
+    document.getElementById("btnCopiar").onclick = async ()=>{
+        const tmp = document.createElement("div");
+        tmp.innerHTML = a.contenido || "";
+        const textoPlano = tmp.innerText;
+        await navigator.clipboard.writeText(textoPlano);
+        alert("Contenido copiado al portapapeles.");
+    };
+};
+
+document.getElementById("btnCerrarModal").onclick = ()=>{
+    document.getElementById("modal").style.display = "none";
+};
+
+/* =======================
+   BOTONES
+======================= */
+document.getElementById("btnGuardar").onclick = guardarArticulo;
+document.getElementById("btnLimpiar").onclick = limpiarFormulario;
+document.getElementById("btnNuevo").onclick = limpiarFormulario;
+
+/* =======================
+   MODO OSCURO / CLARO
+======================= */
+const themeBtn = document.getElementById("themeToggle");
+
+function applyTheme(theme){
+    if(theme==="dark"){
+        document.body.classList.add("dark");
+        themeBtn.textContent = "Modo claro";
+    }else{
+        document.body.classList.remove("dark");
+        themeBtn.textContent = "Modo oscuro";
+    }
+}
+
+const savedTheme = localStorage.getItem("fe_admin_theme") || "light";
+applyTheme(savedTheme);
+
+themeBtn.onclick = ()=>{
+    const next = document.body.classList.contains("dark") ? "light" : "dark";
+    localStorage.setItem("fe_admin_theme", next);
+    applyTheme(next);
+};
+
+/* Inicial */
+cargarTabla();
 </script>
 
 </body>
