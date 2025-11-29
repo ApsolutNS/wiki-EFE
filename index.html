@@ -8,164 +8,504 @@
 <!-- ========= ESTILOS ========= -->
 <style>
     :root {
-        --bg: #f5f7fa;
-        --text: #222;
-        --card: white;
-        --accent: #0f4c81;
-        --shadow: rgba(0,0,0,0.08);
+        --bg: #f5f7fb;
+        --text: #111827;
+        --muted: #6b7280;
+        --card: #ffffff;
+        --accent: #115e9b;
+        --accent-soft: #e0efff;
+        --border: #e5e7eb;
+        --shadow-soft: 0 10px 30px rgba(15,23,42,0.06);
     }
     .dark {
-        --bg: #0e1117;
-        --text: #e2e8f0;
-        --card: #1a1f27;
-        --accent: #4ea1ff;
-        --shadow: rgba(0,0,0,0.5);
+        --bg: #020617;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --card: #0b1120;
+        --accent: #38bdf8;
+        --accent-soft: #0b1727;
+        --border: #1f2937;
+        --shadow-soft: 0 20px 40px rgba(0,0,0,0.65);
     }
-    body {
-        font-family: "Segoe UI", Arial, sans-serif;
-        background: var(--bg);
-        color: var(--text);
+
+    * {
+        box-sizing: border-box;
         margin: 0;
+        padding: 0;
     }
+
+    body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top left, #e5f0ff 0, #f5f7fb 40%, #eef2ff 100%);
+        background-color: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+    }
+
+    /* HEADER CORPORATIVO */
     header {
-        background: var(--card);
-        padding: 18px;
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+        box-shadow: var(--shadow-soft);
+        padding: 14px 20px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        box-shadow: 0 3px 10px var(--shadow);
+        justify-content: space-between;
         position: sticky;
         top: 0;
-        z-index: 10;
+        z-index: 20;
     }
-    h1 { margin: 0; font-size: 22px; color: var(--accent); }
-    #themeToggle, #btnAdmin {
-        background: var(--accent);
-        color: white;
-        border: none;
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .brand-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #0f4c81, #38bdf8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #e5f3ff;
+        font-size: 18px;
+        font-weight: 600;
+    }
+    .brand-text-title {
+        font-size: 18px;
+        font-weight: 600;
+    }
+    .brand-text-sub {
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btn {
+        border: 1px solid transparent;
+        border-radius: 999px;
         padding: 8px 14px;
-        border-radius: 8px;
+        font-size: 13px;
         cursor: pointer;
-        margin-left: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--accent);
+        color: #f9fafb;
+        box-shadow: 0 0 0 rgba(0,0,0,0);
+        transition: .15s;
+        white-space: nowrap;
     }
+    .btn-outline {
+        background: transparent;
+        color: var(--accent);
+        border-color: var(--accent-soft);
+    }
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(15,23,42,0.20);
+    }
+
+    #themeToggle {
+        font-size: 12px;
+        padding-inline: 12px;
+    }
+
+    /* CONTENEDOR PRINCIPAL */
+    .container {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 22px 16px 32px;
+    }
+
+    /* PANEL SUPERIOR BUSCADOR + CONTROLES */
+    .search-section {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 18px 18px 16px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-soft);
+        margin-bottom: 16px;
+    }
+
+    .search-label {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 6px;
+    }
+
+    .search-wrapper {
+        position: relative;
+    }
+
     #searchBar {
         width: 100%;
-        padding: 14px;
-        margin-top: 15px;
-        border-radius: 10px;
-        border: 1px solid #9993;
-        background: var(--card);
+        padding: 12px 40px 12px 36px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #f9fafb;
         color: var(--text);
+        font-size: 14px;
+        outline: none;
+        transition: .12s;
     }
-    .container { max-width: 1100px; margin: auto; padding: 20px; }
-    .section-title {
-        font-size: 18px;
-        margin-top: 30px;
-        font-weight: bold;
-        color: var(--accent);
-    }
-    .results {
-        margin-top: 20px;
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    }
-    .card {
+    #searchBar:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(37,99,235,0.35);
         background: var(--card);
-        padding: 18px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px var(--shadow);
-        cursor: pointer;
-        transition: .2s;
     }
-    .card:hover { transform: translateY(-3px); }
-    .card-category {
-        display: inline-block;
-        padding: 3px 8px;
-        background: var(--accent);
-        color: white;
-        border-radius: 6px;
-        font-size: 12px;
-        margin-top: 5px;
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 15px;
+        color: var(--muted);
     }
-    /* PAGINACIÓN */
-    .pagination {
-        margin-top: 25px;
+    .search-kbd {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        background: #f9fafb;
+    }
+
+    /* CONTROLES: FILTRO + ORDEN */
+    .controls-row {
         display: flex;
-        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 12px;
+    }
+    .controls-left,
+    .controls-right {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .field-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--muted);
+    }
+    select {
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #f9fafb;
+        color: var(--text);
+        font-size: 13px;
+        outline: none;
+    }
+    select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(37,99,235,0.25);
+    }
+
+    /* HISTORIAL */
+    .history-box {
+        margin-top: 12px;
+        display: flex;
         gap: 8px;
         flex-wrap: wrap;
     }
-    .page-btn {
-        padding: 6px 12px;
-        border-radius: 8px;
-        border: none;
+    .history-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-right: 4px;
+    }
+    .history-item {
+        background: #f3f4f6;
+        padding: 4px 10px;
+        border-radius: 999px;
         cursor: pointer;
+        font-size: 12px;
+        border: 1px solid #e5e7eb;
+    }
+    .history-item:hover {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+    }
+
+    /* INFO RESULTADOS */
+    .info-bar {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    /* SECCIONES */
+    .section-title {
+        font-size: 14px;
+        margin-top: 24px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .12em;
+    }
+
+    /* GRID TARJETAS */
+    .results {
+        margin-top: 14px;
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .card {
         background: var(--card);
-        border: 1px solid #9994;
+        padding: 14px 14px 16px;
+        border-radius: 14px;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(148,163,184,0.25);
+        cursor: pointer;
+        transition: .17s;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .card:hover {
+        transform: translateY(-3px);
+        border-color: var(--accent);
+    }
+    .card-title {
+        font-size: 15px;
+        font-weight: 600;
+    }
+    .card-meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .card-category {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    .badge-pill {
+        padding: 3px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+    }
+    .badge-star {
+        border-color: rgba(250,204,21,0.6);
+        color: #f59e0b;
+    }
+    .card-resumen {
+        font-size: 13px;
+        color: var(--muted);
+    }
+
+    /* PAGINACIÓN */
+    .pagination {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .page-btn {
+        padding: 6px 11px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        cursor: pointer;
+        font-size: 12px;
+        min-width: 32px;
     }
     .page-btn.active {
         background: var(--accent);
         color: white;
+        border-color: var(--accent);
     }
-    /* Modal */
+    .page-btn[disabled] {
+        opacity: .4;
+        cursor: default;
+    }
+
+    /* MODAL */
     #modal {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,.65);
-        backdrop-filter: blur(3px);
+        background: rgba(15,23,42,.70);
+        backdrop-filter: blur(4px);
         padding: 40px 20px;
         overflow-y: auto;
+        z-index: 30;
     }
     .modal-content {
-        max-width: 850px;
-        margin: auto;
+        max-width: 860px;
+        margin: 0 auto;
         background: var(--card);
-        padding: 30px;
-        border-radius: 12px;
+        padding: 24px 22px 28px;
+        border-radius: 14px;
+        box-shadow: var(--shadow-soft);
         color: var(--text);
     }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    #modalTitle {
+        font-size: 18px;
+        font-weight: 600;
+    }
+    #modalCategory {
+        font-size: 12px;
+        color: var(--muted);
+    }
     #closeModal {
-        float:right;
-        padding: 8px 14px;
-        background: var(--accent);
-        border:none;
-        border-radius:8px;
-        color:white;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: none;
+        background: #e5e7eb;
+        font-size: 12px;
+        cursor: pointer;
+    }
+    #closeModal:hover {
+        background: #cbd5f5;
+    }
+    #modalContent {
+        margin-top: 10px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 720px) {
+        header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .header-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+        .controls-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
     }
 </style>
 </head>
 <body>
-
 <header>
-    <h1>📘 Navegador FE</h1>
-    <div>
-        <button id="btnAdmin">Admin</button>
-        <button id="themeToggle">Modo oscuro</button>
+    <div class="brand">
+        <div class="brand-icon">FE</div>
+        <div>
+            <div class="brand-text-title">Navegador FE</div>
+            <div class="brand-text-sub">Base de conocimiento para agentes y backoffice</div>
+        </div>
+    </div>
+    <div class="header-actions">
+        <button id="btnAdmin" class="btn btn-outline">Panel Admin</button>
+        <button id="themeToggle" class="btn">Modo oscuro</button>
     </div>
 </header>
 
 <div class="container">
+    <!-- PANEL BUSCADOR + CONTROLES -->
+    <section class="search-section">
+        <div class="search-label">Busca por palabra clave, norma, flujo, producto o frase de speech</div>
+        <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input id="searchBar" placeholder="Ej: SBS plazo refinanciamiento, speech objeciones, flujo validación de datos…" />
+            <span class="search-kbd">Ctrl + F</span>
+        </div>
 
-    <input id="searchBar" placeholder="Buscar: SBS, speech, flujos…" />
+        <div class="controls-row">
+            <div class="controls-left">
+                <div>
+                    <div class="field-label">Categoría</div>
+                    <select id="categoriaSelect">
+                        <option value="todas">Todas</option>
+                        <option value="Norma Regulatoria">Norma Regulatoria</option>
+                        <option value="Monitoreo de Calidad">Monitoreo de Calidad</option>
+                        <option value="Speech">Speech</option>
+                        <option value="Flujos">Flujos</option>
+                        <option value="Productos">Productos</option>
+                        <option value="General">General</option>
+                    </select>
+                </div>
+            </div>
+            <div class="controls-right">
+                <div>
+                    <div class="field-label">Ordenar por</div>
+                    <select id="sortSelect">
+                        <option value="recientes">Más recientes</option>
+                        <option value="vistas">Más vistos</option>
+                        <option value="destacados">Destacados</option>
+                    </select>
+                </div>
+            </div>
+        </div>
 
-    <div class="section-title">⭐ Recomendados</div>
+        <!-- HISTORIAL -->
+        <div class="history-box" id="historyBox"></div>
+
+        <!-- INFO RESULTADOS -->
+        <div class="info-bar">
+            <div id="infoResultados">Mostrando 0 resultados.</div>
+            <div id="infoOrden"></div>
+        </div>
+    </section>
+
+    <!-- RECOMENDADOS -->
+    <div class="section-title">⭐ Recomendados para hoy</div>
     <div id="topResults" class="results"></div>
 
-    <div class="section-title">📄 Resultados</div>
+    <!-- RESULTADOS -->
+    <div class="section-title">📄 Todos los artículos</div>
     <div id="results" class="results"></div>
-
     <div id="pagination" class="pagination"></div>
-
 </div>
 
 <!-- MODAL -->
 <div id="modal">
     <div class="modal-content">
-        <button id="closeModal">Cerrar</button>
-        <h2 id="modalTitle"></h2>
-        <p><b id="modalCategory"></b></p>
+        <div class="modal-header">
+            <div>
+                <h2 id="modalTitle"></h2>
+                <p id="modalCategory"></p>
+            </div>
+            <button id="closeModal">Cerrar</button>
+        </div>
         <div id="modalContent"></div>
     </div>
 </div>
@@ -175,6 +515,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+/* ---- CONFIG FIREBASE ---- */
 const firebaseConfig = {
     apiKey: "AIzaSyBL1qT2tLfFTJ_f_3apv_sxKnn28u0nccs",
     authDomain: "financiera-efectiva-kb.firebaseapp.com",
@@ -183,106 +524,293 @@ const firebaseConfig = {
     messagingSenderId: "508397908196",
     appId: "1:508397908196:web:31d28a73ef56160963fcf1"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let articulos = [];
-let pagina = 1;
-const porPagina = 12;
+/* ---- ELEMENTOS DOM ---- */
+const searchBar        = document.getElementById("searchBar");
+const categoriaSelect  = document.getElementById("categoriaSelect");
+const sortSelect       = document.getElementById("sortSelect");
+const resultsEl        = document.getElementById("results");
+const topEl            = document.getElementById("topResults");
+const historyBox       = document.getElementById("historyBox");
+const paginationEl     = document.getElementById("pagination");
+const infoResultadosEl = document.getElementById("infoResultados");
+const infoOrdenEl      = document.getElementById("infoOrden");
 
-/* =============== ADMIN LOGIN FIX ================== */
+/* ---- ESTADO ---- */
+let articulosAll = [];        // todo lo visible
+let articulosFiltrados = [];  // resultado de filtros + búsqueda
+let paginaActual = 1;
+const POR_PAGINA = 12;
+let criterioOrden = "recientes";
+let filtroCategoria = "todas";
+
+/* =============== BOTÓN ADMIN (SIEMPRE PIDE LOGIN) ============== */
 document.getElementById("btnAdmin").onclick = () => {
-    localStorage.removeItem("efectiva_login_ok"); // fuerza login
+    localStorage.removeItem("efectiva_login_ok"); // fuerza login en admin.html
     window.location.href = "admin.html";
 };
 
-/* ===================== CARGAR FIRESTORE ===================== */
+/* =================== HELPERS =================== */
+function toDateSafe(f) {
+    if (!f) return new Date(0);
+    if (typeof f.toDate === "function") return f.toDate();
+    return new Date(f);
+}
+
+function normalizar(text = "") {
+    return text
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+}
+
+/* =================== CARGAR ARTÍCULOS =================== */
 async function cargarArticulos() {
     const snap = await getDocs(collection(db, "articulos"));
-    articulos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    articulosAll = snap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(a => a.visibleAgentes !== false); // por defecto visible
 
-    const rec = [...articulos].sort((a,b)=> new Date(b.fecha) - new Date(a.fecha)).slice(0,5);
-    renderResults(rec, topResults);
+    // Recomendados: destacados primero, luego recientes
+    const recomendados = [...articulosAll]
+        .sort((a,b) => {
+            const destDiff = (b.destacado === true) - (a.destacado === true);
+            if (destDiff !== 0) return destDiff;
+            return toDateSafe(b.fecha) - toDateSafe(a.fecha);
+        })
+        .slice(0, 5);
+    renderResults(recomendados, topEl);
 
-    renderPagina();
+    // Inicial: sin filtros, orden por recientes
+    aplicarFiltrosYBusqueda();
 }
 cargarArticulos();
 
-/* ===================== PAGINACIÓN ===================== */
-function renderPagina() {
-    const inicio = (pagina - 1) * porPagina;
-    const paginados = articulos.slice(inicio, inicio + porPagina);
+/* =================== APLICAR FILTROS + BÚSQUEDA =================== */
+function aplicarFiltrosYBusqueda() {
+    const q = normalizar(searchBar.value.trim());
+    // Base: categoría
+    const base = articulosAll.filter(a => {
+        if (filtroCategoria === "todas") return true;
+        return (a.categoria || "") === filtroCategoria;
+    });
 
-    renderResults(paginados, results);
-
-    const total = Math.ceil(articulos.length / porPagina);
-    renderPagination(total);
-}
-
-function renderPagination(total) {
-    pagination.innerHTML = "";
-    for(let i=1;i<=total;i++){
-        const b = document.createElement("button");
-        b.className="page-btn"+(i===pagina?" active":"");
-        b.innerText=i;
-        b.onclick=()=>{pagina=i;renderPagina();}
-        pagination.appendChild(b);
+    if (!q) {
+        // Sin búsqueda: ordenar según criterio seleccionado
+        articulosFiltrados = ordenarLista(base);
+    } else {
+        // Con búsqueda: orden = relevancia
+        const conScore = base
+            .map(a => {
+                let score = 0;
+                if (normalizar(a.titulo).includes(q))    score += 5;
+                if (normalizar(a.resumen).includes(q))   score += 3;
+                if (normalizar(a.categoria).includes(q)) score += 2;
+                if (normalizar(a.contenido).includes(q)) score += 1;
+                return { ...a, score };
+            })
+            .filter(a => a.score > 0)
+            .sort((a,b) => b.score - a.score || (toDateSafe(b.fecha) - toDateSafe(a.fecha)));
+        articulosFiltrados = conScore;
     }
+
+    paginaActual = 1; // reset página
+    renderPagina();
 }
 
-/* ===================== RENDER CARDS ===================== */
+/* =================== ORDENAR =================== */
+function ordenarLista(lista) {
+    const arr = [...lista];
+    if (criterioOrden === "vistas") {
+        return arr.sort((a,b) => (b.vistas || 0) - (a.vistas || 0));
+    }
+    if (criterioOrden === "destacados") {
+        return arr.sort((a,b) => {
+            const destDiff = (b.destacado === true) - (a.destacado === true);
+            if (destDiff !== 0) return destDiff;
+            return toDateSafe(b.fecha) - toDateSafe(a.fecha);
+        });
+    }
+    // recientes por defecto
+    return arr.sort((a,b) => toDateSafe(b.fecha) - toDateSafe(a.fecha));
+}
+
+/* =================== PAGINACIÓN =================== */
+function renderPagina() {
+    const total = articulosFiltrados.length;
+    if (total === 0) {
+        resultsEl.innerHTML = "<p style='font-size:13px;color:var(--muted);margin-top:8px;'>No se encontraron resultados con los filtros actuales.</p>";
+        paginationEl.innerHTML = "";
+        infoResultadosEl.textContent = "Mostrando 0 resultados.";
+        infoOrdenEl.textContent = "";
+        return;
+    }
+
+    const totalPaginas = Math.ceil(total / POR_PAGINA);
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+
+    const inicio = (paginaActual - 1) * POR_PAGINA;
+    const paginados = articulosFiltrados.slice(inicio, inicio + POR_PAGINA);
+    renderResults(paginados, resultsEl);
+
+    const desde = inicio + 1;
+    const hasta = Math.min(inicio + POR_PAGINA, total);
+    infoResultadosEl.textContent = `Mostrando ${desde}–${hasta} de ${total} artículos.`;
+    infoOrdenEl.textContent = searchBar.value.trim()
+        ? "Ordenado por relevancia de búsqueda."
+        : criterioOrden === "recientes"
+            ? "Ordenado por más recientes."
+            : criterioOrden === "vistas"
+                ? "Ordenado por más vistos."
+                : "Ordenado por destacados.";
+
+    renderPagination(totalPaginas);
+}
+
+function renderPagination(totalPaginas) {
+    paginationEl.innerHTML = "";
+    if (totalPaginas <= 1) return;
+
+    const prev = document.createElement("button");
+    prev.className = "page-btn";
+    prev.innerText = "‹";
+    prev.disabled = paginaActual === 1;
+    prev.onclick = () => { if (paginaActual > 1){ paginaActual--; renderPagina(); } };
+    paginationEl.appendChild(prev);
+
+    for (let i = 1; i <= totalPaginas; i++) {
+        const b = document.createElement("button");
+        b.className = "page-btn" + (i === paginaActual ? " active" : "");
+        b.innerText = i;
+        b.onclick = () => { paginaActual = i; renderPagina(); };
+        paginationEl.appendChild(b);
+    }
+
+    const next = document.createElement("button");
+    next.className = "page-btn";
+    next.innerText = "›";
+    next.disabled = paginaActual === totalPaginas;
+    next.onclick = () => { if (paginaActual < totalPaginas){ paginaActual++; renderPagina(); } };
+    paginationEl.appendChild(next);
+}
+
+/* =================== RENDER CARDS =================== */
 function renderResults(items, target) {
-    target.innerHTML = items.map(a => `
+    target.innerHTML = items.map(a => {
+        const fechaStr = a.fecha ? toDateSafe(a.fecha).toLocaleDateString("es-PE") : "";
+        const vistas = a.vistas || 0;
+        const esDestacado = a.destacado === true;
+        return `
         <div class="card" onclick="abrir('${a.id}')">
-            <h3>${a.titulo}</h3>
-            <div class="card-category">${a.categoria}</div>
-            <p>${a.resumen}</p>
-        </div>
-    `).join("");
+            <div class="card-title">${a.titulo || ""}</div>
+            <div class="card-meta-row">
+                <div class="card-category">
+                    <span>●</span>
+                    <span>${a.categoria || "Sin categoría"}</span>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    ${esDestacado ? `<span class="badge-pill badge-star">Destacado</span>` : ""}
+                    ${fechaStr ? `<span class="badge-pill">${fechaStr}</span>` : ""}
+                    <span class="badge-pill">${vistas} vistas</span>
+                </div>
+            </div>
+            <div class="card-resumen">${a.resumen || ""}</div>
+        </div>`;
+    }).join("");
 }
 
-/* ===================== MODAL ===================== */
-window.abrir = function(id){
-    const a = articulos.find(x=>x.id===id);
-    modalTitle.innerText = a.titulo;
-    modalCategory.innerText = a.categoria;
-    modalContent.innerHTML = a.contenido;
-    modal.style.display = "block";
+/* =================== MODAL =================== */
+window.abrir = function(id) {
+    const art = articulosAll.find(a => a.id === id);
+    if (!art) return;
+    document.getElementById("modalTitle").textContent = art.titulo || "";
+    document.getElementById("modalCategory").textContent =
+        (art.categoria || "Sin categoría") +
+        (art.fecha ? " · " + toDateSafe(art.fecha).toLocaleString("es-PE") : "");
+    document.getElementById("modalContent").innerHTML = art.contenido || "";
+    document.getElementById("modal").style.display = "block";
 };
-closeModal.onclick = ()=> modal.style.display="none";
-
-/* ===================== BUSCAR ===================== */
-function normalizar(t){
-    return t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
-}
-
-searchBar.addEventListener("input", e=>{
-    const q = normalizar(e.target.value);
-    if(!q){ renderPagina(); return; }
-
-    articulosFiltrados = articulos
-    .map(a=>{
-        let s=0;
-        if(normalizar(a.titulo).includes(q)) s+=5;
-        if(normalizar(a.resumen).includes(q)) s+=3;
-        if(normalizar(a.categoria).includes(q)) s+=2;
-        if(normalizar(a.contenido).includes(q)) s+=1;
-        return {...a,score:s};
-    })
-    .filter(a=>a.score>0)
-    .sort((a,b)=>b.score-a.score);
-
-    renderResults(articulosFiltrados, results);
-    pagination.innerHTML="";
+document.getElementById("closeModal").onclick = () => {
+    document.getElementById("modal").style.display = "none";
+};
+document.getElementById("modal").addEventListener("click", e => {
+    if (e.target.id === "modal") {
+        document.getElementById("modal").style.display = "none";
+    }
 });
 
-/* ===================== MODO OSCURO ===================== */
-themeToggle.onclick=()=>{
-    document.body.classList.toggle("dark");
-    themeToggle.innerText=document.body.classList.contains("dark")?"Modo claro":"Modo oscuro";
+/* =================== HISTORIAL DE BÚSQUEDA =================== */
+function addHistory(q) {
+    if (!q.trim()) return;
+    let hist = JSON.parse(localStorage.getItem("fe_historial") || "[]");
+    hist = hist.filter(x => x !== q);
+    hist.unshift(q);
+    hist = hist.slice(0, 6);
+    localStorage.setItem("fe_historial", JSON.stringify(hist));
+    renderHistory();
+}
+function renderHistory() {
+    const hist = JSON.parse(localStorage.getItem("fe_historial") || "[]");
+    if (!hist.length) {
+        historyBox.innerHTML = "";
+        return;
+    }
+    historyBox.innerHTML =
+        `<span class="history-label">Búsquedas recientes:</span>` +
+        hist.map(h => `<button class="history-item" onclick="buscarDesdeHistorial('${h.replace(/'/g,"\\'")}')">${h}</button>`).join("");
+}
+window.buscarDesdeHistorial = function(q) {
+    searchBar.value = q;
+    aplicarFiltrosYBusqueda();
 };
-</script>
+renderHistory();
 
+/* =================== BUSCADOR INTELIGENTE =================== */
+function onBuscarInput(valor) {
+    addHistory(valor);
+    aplicarFiltrosYBusqueda();
+}
+searchBar.addEventListener("input", e => onBuscarInput(e.target.value));
+
+/* =================== EVENTOS FILTRO / ORDEN =================== */
+categoriaSelect.addEventListener("change", e => {
+    filtroCategoria = e.target.value;
+    aplicarFiltrosYBusqueda();
+});
+sortSelect.addEventListener("change", e => {
+    criterioOrden = e.target.value;
+    aplicarFiltrosYBusqueda();
+});
+
+/* =================== MODO OSCURO =================== */
+const themeToggle = document.getElementById("themeToggle");
+function applyTheme(theme) {
+    if (theme === "dark") {
+        document.body.classList.add("dark");
+        themeToggle.textContent = "Modo claro";
+    } else {
+        document.body.classList.remove("dark");
+        themeToggle.textContent = "Modo oscuro";
+    }
+}
+const savedTheme = localStorage.getItem("fe_index_theme") || "light";
+applyTheme(savedTheme);
+themeToggle.onclick = () => {
+    const next = document.body.classList.contains("dark") ? "light" : "dark";
+    localStorage.setItem("fe_index_theme", next);
+    applyTheme(next);
+};
+
+/* Atajo Ctrl+F / Cmd+F para enfocar buscador propio */
+document.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        searchBar.focus();
+    }
+});
+</script>
 </body>
 </html>
