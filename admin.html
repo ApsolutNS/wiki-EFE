@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Admin FE - Gestión de Artículos</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<!-- ===== ESTILOS ===== -->
 <style>
     body {
         font-family: "Segoe UI", Arial, sans-serif;
@@ -13,7 +13,6 @@
         padding: 0;
         color: #333;
     }
-
     header {
         background: #0f4c81;
         padding: 15px;
@@ -22,13 +21,11 @@
         font-size: 22px;
         font-weight: bold;
     }
-
     .container {
         max-width: 1100px;
         margin: auto;
         padding: 20px;
     }
-
     /* Tabla */
     table {
         width: 100%;
@@ -38,22 +35,18 @@
         overflow: hidden;
         box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     }
-
     th, td {
         padding: 12px;
         border-bottom: 1px solid #eee;
         font-size: 14px;
     }
-
     th {
         background: #e8eff7;
         font-weight: bold;
     }
-
     tr:hover td {
         background: #f5f9ff;
     }
-
     button {
         padding: 8px 14px;
         border: none;
@@ -63,11 +56,9 @@
         color: white;
         font-size: 14px;
     }
-
     .delete-btn {
         background: #c62828;
     }
-
     .form-box {
         background: white;
         padding: 20px;
@@ -75,7 +66,6 @@
         border-radius: 10px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.06);
     }
-
     input, textarea, select {
         width: 100%;
         padding: 10px;
@@ -83,25 +73,19 @@
         border: 1px solid #ccc;
         font-size: 14px;
     }
-
-    textarea {
-        height: 150px;
+    #editor {
+        background: white;
+        height: 220px;
+        margin-bottom: 15px;
     }
-
-    .row {
-        display: flex;
-        gap: 10px;
-    }
-
-    .half {
-        flex: 1;
-    }
-
     .save-btn {
         background: #0f8f4c;
     }
-
 </style>
+
+<!-- QUIILL -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
 </head>
 <body>
 
@@ -110,6 +94,7 @@
 <div class="container">
 
     <h2>Listado de Artículos</h2>
+
     <table id="tablaArticulos">
         <thead>
             <tr>
@@ -126,8 +111,8 @@
     <br><br>
 
     <h2>Crear / Editar Artículo</h2>
-
     <div class="form-box">
+
         <input type="hidden" id="articuloId">
 
         <label>Título</label>
@@ -150,12 +135,6 @@
         <label>Contenido (HTML permitido)</label>
         <div id="editor"></div>
         <input type="hidden" id="contenido">
-        <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-        <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-        <script>
-        const quill = new Quill('#editor', { theme: 'snow' });
-        </script>
-
 
         <label>Visible para agentes</label>
         <select id="visibleAgentes">
@@ -164,20 +143,24 @@
         </select>
 
         <br><br>
-        <button class="save-btn" onclick="guardarArticulo()">Guardar Artículo</button>
-    </div>
 
+        <button class="save-btn" onclick="guardarArticulo()">Guardar Artículo</button>
+
+    </div>
 </div>
 
+<!-- QUIILL -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
 <!-- FIREBASE -->
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { 
-    getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc 
+    getFirestore, collection, getDocs, addDoc, 
+    doc, getDoc, updateDoc, deleteDoc 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+/* ===== FIREBASE CONFIG ===== */
 const firebaseConfig = {
     apiKey: "AIzaSyBL1qT2tLfFTJ_f_3apv_sxKnn28u0nccs",
     authDomain: "financiera-efectiva-kb.firebaseapp.com",
@@ -189,11 +172,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const coleccion = collection(db, "articulos");
 
-let coleccion = collection(db, "articulos");
+/* ===== QUILL ===== */
+const quill = new Quill("#editor", { theme: "snow" });
 
 /* ==========================
-   CARGAR ARTÍCULOS
+   CARGAR TABLA
    ========================== */
 async function cargarTabla() {
     const tbody = document.querySelector("#tablaArticulos tbody");
@@ -203,7 +188,6 @@ async function cargarTabla() {
 
     snap.forEach(docu => {
         const art = docu.data();
-
         tbody.innerHTML += `
             <tr>
                 <td>${art.titulo}</td>
@@ -216,30 +200,41 @@ async function cargarTabla() {
     });
 }
 
+/* ==========================
+   EDITAR ARTÍCULO CORRECTO
+   ========================== */
 window.editar = async function(id) {
-    const snap = await getDocs(coleccion);
-    
-    snap.forEach(docu => {
-        if (docu.id === id) {
-            const art = docu.data();
-            document.getElementById("articuloId").value = id;
-            document.getElementById("titulo").value = art.titulo;
-            document.getElementById("categoria").value = art.categoria;
-            document.getElementById("resumen").value = art.resumen;
-            document.getElementById("contenido").value = art.contenido;
-            document.getElementById("visibleAgentes").value = art.visibleAgentes;
-        }
-    });
+    const ref = doc(db, "articulos", id);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+        alert("El artículo no existe");
+        return;
+    }
+
+    const art = snap.data();
+
+    // Llenar campos
+    document.getElementById("articuloId").value = id;
+    document.getElementById("titulo").value = art.titulo;
+    document.getElementById("categoria").value = art.categoria;
+    document.getElementById("resumen").value = art.resumen;
+    document.getElementById("visibleAgentes").value = art.visibleAgentes ? "true" : "false";
+
+    // Cargar contenido en Quill
+    quill.root.innerHTML = art.contenido || "";
 
     window.scrollTo(0, document.body.scrollHeight);
 };
 
+/* ==========================
+   ELIMINAR
+   ========================== */
 window.eliminar = async function(id) {
-    const respuesta = confirm("¿Eliminar este artículo?");
-    if (!respuesta) return;
+    if (!confirm("¿Eliminar este artículo?")) return;
 
     await deleteDoc(doc(db, "articulos", id));
-    alert("Artículo eliminado");
+    alert("Artículo eliminado correctamente.");
     cargarTabla();
 };
 
@@ -247,7 +242,12 @@ window.eliminar = async function(id) {
    GUARDAR ARTÍCULO
    ========================== */
 window.guardarArticulo = async function() {
+
+    // Cargar HTML desde Quill
+    document.getElementById("contenido").value = quill.root.innerHTML;
+
     const id = document.getElementById("articuloId").value;
+
     const data = {
         titulo: document.getElementById("titulo").value,
         categoria: document.getElementById("categoria").value,
@@ -264,17 +264,27 @@ window.guardarArticulo = async function() {
 
     if (id) {
         await updateDoc(doc(db, "articulos", id), data);
-        alert("Artículo actualizado correctamente.");
+        alert("Artículo actualizado.");
     } else {
         await addDoc(coleccion, data);
-        alert("Artículo creado correctamente.");
+        alert("Artículo creado.");
     }
 
-    document.getElementById("articuloId").value = "";
-    document.querySelector("form")?.reset();
-
+    limpiarFormulario();
     cargarTabla();
 };
+
+/* ==========================
+   LIMPIAR FORMULARIO
+   ========================== */
+function limpiarFormulario() {
+    document.getElementById("articuloId").value = "";
+    document.getElementById("titulo").value = "";
+    document.getElementById("categoria").value = "";
+    document.getElementById("resumen").value = "";
+    document.getElementById("visibleAgentes").value = "true";
+    quill.root.innerHTML = "";
+}
 
 /* Inicializar tabla */
 cargarTabla();
