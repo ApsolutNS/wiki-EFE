@@ -148,7 +148,14 @@
         <input id="resumen" placeholder="Breve descripción del contenido">
 
         <label>Contenido (HTML permitido)</label>
-        <textarea id="contenido"></textarea>
+        <div id="editor"></div>
+        <input type="hidden" id="contenido">
+        <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+        <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+        <script>
+        const quill = new Quill('#editor', { theme: 'snow' });
+        </script>
+
 
         <label>Visible para agentes</label>
         <select id="visibleAgentes">
