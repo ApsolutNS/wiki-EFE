@@ -1,126 +1,188 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Navegador FE - Base de Conocimiento</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navegador FE – Base de Conocimiento</title>
 
-<!-- ===== ESTILOS ===== -->
+<!-- ========= ESTILOS ========= -->
 <style>
+    :root {
+        --bg: #f5f7fa;
+        --text: #222;
+        --card: white;
+        --accent: #0f4c81;
+        --shadow: rgba(0,0,0,0.08);
+    }
+    /* Dark Mode */
+    .dark {
+        --bg: #0e1117;
+        --text: #e2e8f0;
+        --card: #1a1f27;
+        --accent: #4ea1ff;
+        --shadow: rgba(0,0,0,0.5);
+    }
+
     body {
         font-family: "Segoe UI", Arial, sans-serif;
-        background: #f5f7fa;
+        background: var(--bg);
+        color: var(--text);
         margin: 0;
-        padding: 0;
-        color: #334;
     }
+
     header {
-        background: white;
-        padding: 20px;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+        background: var(--card);
+        padding: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 3px 10px var(--shadow);
         position: sticky;
         top: 0;
-        z-index: 5;
+        z-index: 10;
     }
+
     h1 {
+        font-size: 22px;
         margin: 0;
-        font-size: 26px;
-        color: #0f4c81;
+        color: var(--accent);
     }
+
+    #themeToggle {
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    #searchBar {
+        width: 100%;
+        padding: 14px;
+        margin-top: 15px;
+        border-radius: 10px;
+        border: 1px solid #9993;
+        background: var(--card);
+        color: var(--text);
+    }
+
     .container {
         max-width: 1100px;
         margin: auto;
         padding: 20px;
     }
 
-    /* Buscador */
-    #searchBar {
-        width: 100%;
-        padding: 14px;
-        font-size: 16px;
-        border-radius: 10px;
-        border: 1px solid #ccd5e0;
-        margin-top: 15px;
-        outline: none;
-        transition: all .25s;
-    }
-    #searchBar:focus {
-        border-color: #0f4c81;
-        box-shadow: 0 0 4px #0f4c8122;
+    .section-title {
+        font-size: 18px;
+        margin-top: 30px;
+        font-weight: bold;
+        color: var(--accent);
     }
 
-    /* Resultados */
+    /* Cards */
     .results {
-        margin-top: 30px;
+        margin-top: 20px;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 18px;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     }
 
     .card {
-        background: white;
+        background: var(--card);
         padding: 18px;
         border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        box-shadow: 0 4px 12px var(--shadow);
         cursor: pointer;
-        transition: all .25s;
+        transition: .2s;
     }
+
     .card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+        transform: translateY(-3px);
     }
-    .card h3 {
-        margin: 0;
-        color: #0f4c81;
-        font-size: 18px;
-    }
-    .card p {
-        margin-top: 6px;
-        font-size: 14px;
-        color: #555;
+
+    .card-category {
+        display: inline-block;
+        background: var(--accent);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-top: 5px;
     }
 
     /* Modal */
     #modal {
         display: none;
         position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: #0008;
+        inset: 0;
+        background: rgba(0,0,0,.65);
         backdrop-filter: blur(3px);
         padding: 40px 20px;
         overflow-y: auto;
     }
+
     .modal-content {
-        max-width: 800px;
+        max-width: 850px;
         margin: auto;
-        background: white;
+        background: var(--card);
+        color: var(--text);
         padding: 30px;
         border-radius: 12px;
     }
+
     #closeModal {
-        float: right;
-        cursor: pointer;
-        padding: 8px 14px;
-        border: none;
-        background: #0f4c81;
+        background: var(--accent);
         color: white;
+        padding: 8px 14px;
         border-radius: 6px;
+        border: none;
+        float: right;
+    }
+
+    /* Historial */
+    .history-box {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .history-item {
+        background: var(--card);
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 1px solid #9993;
     }
 </style>
 </head>
-
 <body>
+
 <header>
-    <h1>📘 Navegador FE – Base de Conocimiento</h1>
-    <input id="searchBar" placeholder="Buscar por palabra clave, categoría, procedimiento, SBS…" />
+    <h1>📘 Navegador FE</h1>
+    <button id="themeToggle">Modo oscuro</button>
 </header>
 
 <div class="container">
+
+    <!-- Buscador -->
+    <input id="searchBar" placeholder="Buscar: SBS, speech, flujos, productos…" />
+
+    <!-- Historial -->
+    <div class="history-box" id="historyBox"></div>
+
+    <!-- Recomendados -->
+    <div class="section-title">⭐ Artículos Recomendados</div>
+    <div id="topResults" class="results"></div>
+
+    <!-- Resultados -->
+    <div class="section-title">📄 Resultados</div>
     <div id="results" class="results"></div>
+
 </div>
 
-<!-- ===== MODAL ===== -->
+<!-- Modal -->
 <div id="modal">
     <div class="modal-content">
         <button id="closeModal">Cerrar</button>
@@ -130,12 +192,12 @@
     </div>
 </div>
 
-<!-- ===== FIREBASE + LÓGICA ===== -->
+<!-- ========= FIREBASE + LÓGICA ========= -->
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* === CONFIG FIREBASE === */
 const firebaseConfig = {
     apiKey: "AIzaSyBL1qT2tLfFTJ_f_3apv_sxKnn28u0nccs",
     authDomain: "financiera-efectiva-kb.firebaseapp.com",
@@ -148,90 +210,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* Variables */
 let articulos = [];
-const resultsEl = document.getElementById("results");
+
 const searchBar = document.getElementById("searchBar");
+const resultsEl = document.getElementById("results");
+const topEl = document.getElementById("topResults");
+const historyBox = document.getElementById("historyBox");
 
-/* Render */
-function renderResults(items) {
-    resultsEl.innerHTML = items.map(a => `
-        <div class="card" onclick="abrir('${a.id}')">
-            <h3>${a.titulo}</h3>
-            <p><b>${a.categoria}</b></p>
-            <p>${a.resumen}</p>
-        </div>
-    `).join("");
-
-    if (items.length === 0) {
-        resultsEl.innerHTML = `<p>No se encontraron resultados.</p>`;
-    }
-}
-
-/* Modal */
-window.abrir = function(id) {
-    const art = articulos.find(a => a.id === id);
-    if (!art) return;
-    document.getElementById("modalTitle").innerHTML = art.titulo;
-    document.getElementById("modalCategory").innerHTML = art.categoria;
-    document.getElementById("modalContent").innerHTML = art.contenido;
-    document.getElementById("modal").style.display = "block";
-};
-document.getElementById("closeModal").onclick = () => {
-    document.getElementById("modal").style.display = "none";
-};
-
-/* ===== LIMPIAR HTML PARA LA BUSQUEDA ===== */
-function limpiarHTML(texto) {
-    return texto
-        .replace(/<[^>]+>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLowerCase();
-}
-
-/* ===== BUSQUEDA INTELIGENTE ===== */
-searchBar.addEventListener("input", () => {
-    const q = searchBar.value.trim().toLowerCase();
-    if (q.length === 0) {
-        renderResults(articulos);
-        return;
-    }
-
-    const palabras = q.split(" ");
-
-    const resultados = articulos
-        .map(a => {
-            const titulo = a.titulo.toLowerCase();
-            const resumen = a.resumen.toLowerCase();
-            const categoria = a.categoria.toLowerCase();
-            const contenidoLimpio = limpiarHTML(a.contenido || "");
-
-            let score = 0;
-
-            const PESOS = {
-                titulo: 4,
-                resumen: 3,
-                categoria: 2,
-                contenido: 1
-            };
-
-            palabras.forEach(word => {
-                if (titulo.includes(word)) score += PESOS.titulo;
-                if (resumen.includes(word)) score += PESOS.resumen;
-                if (categoria.includes(word)) score += PESOS.categoria;
-                if (contenidoLimpio.includes(word)) score += PESOS.contenido;
-            });
-
-            return { ...a, score };
-        })
-        .filter(a => a.score > 0)
-        .sort((a, b) => b.score - a.score);
-
-    renderResults(resultados);
-});
-
-/* ===== CARGAR FIRESTORE ===== */
+/* ============================
+   CARGAR ARTÍCULOS FIRESTORE
+============================ */
 async function cargarArticulos() {
     const snap = await getDocs(collection(db, "articulos"));
     articulos = snap.docs.map(doc => ({
@@ -239,12 +227,118 @@ async function cargarArticulos() {
         ...doc.data()
     }));
 
-    console.log("🔥 Artículos cargados:", articulos);
+    // top 5 más recientes
+    const recientes = [...articulos]
+        .sort((a,b)=> new Date(b.fecha) - new Date(a.fecha))
+        .slice(0,5);
 
-    renderResults(articulos);
+    renderResults(recientes, topEl);
+    renderResults(articulos, resultsEl);
 }
 
 cargarArticulos();
+
+/* ============================
+   RENDERIZACIÓN
+============================ */
+function renderResults(items, target) {
+    target.innerHTML = items.map(a => `
+        <div class="card" onclick="abrir('${a.id}')">
+            <h3>${a.titulo}</h3>
+            <div class="card-category">${a.categoria}</div>
+            <p>${a.resumen}</p>
+        </div>
+    `).join("");
+}
+
+/* ============================
+   MODAL
+============================ */
+window.abrir = function(id) {
+    const art = articulos.find(a => a.id === id);
+    document.getElementById("modalTitle").innerHTML = art.titulo;
+    document.getElementById("modalCategory").innerHTML = art.categoria;
+    document.getElementById("modalContent").innerHTML = art.contenido;
+    document.getElementById("modal").style.display = "block";
+};
+
+document.getElementById("closeModal").onclick = () => {
+    document.getElementById("modal").style.display = "none";
+};
+
+/* ============================
+   HISTORIAL DE BÚSQUEDA
+============================ */
+function addHistory(q) {
+    if (!q.trim()) return;
+    let hist = JSON.parse(localStorage.getItem("fe_historial") || "[]");
+
+    hist = hist.filter(x => x !== q); 
+    hist.unshift(q);
+
+    hist = hist.slice(0,6);
+    localStorage.setItem("fe_historial", JSON.stringify(hist));
+
+    renderHistory();
+}
+
+function renderHistory() {
+    const hist = JSON.parse(localStorage.getItem("fe_historial") || "[]");
+    historyBox.innerHTML = hist.map(h => `
+        <div class="history-item" onclick="buscar('${h}')">${h}</div>
+    `).join("");
+}
+
+renderHistory();
+
+/* ============================
+   BUSCAR INTELIGENTE
+============================ */
+function normalizar(text) {
+    return text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+}
+
+function buscar(valor) {
+    searchBar.value = valor;
+    addHistory(valor);
+
+    const q = normalizar(valor);
+
+    const results = articulos
+        .map(a => {
+
+            // PESOS
+            let score = 0;
+            if (normalizar(a.titulo).includes(q)) score += 5;
+            if (normalizar(a.resumen).includes(q)) score += 3;
+            if (normalizar(a.categoria).includes(q)) score += 2;
+            if (normalizar(a.contenido).includes(q)) score += 1;
+
+            return { ...a, score };
+        })
+        .filter(a => a.score > 0)
+        .sort((a,b) => b.score - a.score);
+
+    renderResults(results, resultsEl);
+}
+
+searchBar.addEventListener("input", e => buscar(e.target.value));
+
+/* ============================
+   MODO OSCURO
+============================ */
+const toggleBtn = document.getElementById("themeToggle");
+
+toggleBtn.onclick = () => {
+    document.body.classList.toggle("dark");
+    toggleBtn.innerText = document.body.classList.contains("dark")
+        ? "Modo claro"
+        : "Modo oscuro";
+};
+
 </script>
 </body>
 </html>
