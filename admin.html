@@ -91,7 +91,7 @@
         gap:10px;
         align-items:center;
         justify-content:space-between;
-        margin-bottom:14px;
+        margin-bottom:10px;
     }
     .search-input{
         width:260px;
@@ -142,6 +142,26 @@
     }
     .badge-danger .badge-dot{
         background:var(--danger);
+    }
+
+    .metrics-row{
+        display:flex;
+        flex-wrap:wrap;
+        gap:6px;
+        margin-bottom:8px;
+    }
+    .metrics-cats{
+        display:flex;
+        flex-wrap:wrap;
+        gap:6px;
+        margin-bottom:10px;
+    }
+    .cat-pill{
+        font-size:11px;
+        padding:3px 8px;
+        border-radius:999px;
+        border:1px solid rgba(148,163,184,0.6);
+        background:rgba(148,163,184,0.08);
     }
 
     /* TARJETA */
@@ -311,6 +331,40 @@
         margin-top:4px;
     }
 
+    /* OVERLAY CARGA */
+    #loadingOverlay{
+        position:fixed;
+        inset:0;
+        background:rgba(15,23,42,0.65);
+        display:none;
+        align-items:center;
+        justify-content:center;
+        z-index:60;
+        color:#e5e7eb;
+        font-size:14px;
+        flex-direction:column;
+        gap:10px;
+    }
+    .loader-bar{
+        width:180px;
+        height:4px;
+        border-radius:999px;
+        background:rgba(148,163,184,0.4);
+        overflow:hidden;
+    }
+    .loader-bar-inner{
+        width:40%;
+        height:100%;
+        border-radius:999px;
+        background:#38bdf8;
+        animation:loading 1s infinite;
+    }
+    @keyframes loading{
+        0%{transform:translateX(-100%);}
+        50%{transform:translateX(50%);}
+        100%{transform:translateX(200%);}
+    }
+
     @media(max-width:720px){
         header{
             flex-direction:column;
@@ -337,30 +391,43 @@
             🛠️ Admin FE – Base de Conocimiento
             <span class="pill">Panel interno</span>
         </div>
-        <div class="header-sub">Crear, editar y destacar artículos para los agentes.</div>
+        <div class="header-sub">Crear, editar, destacar y medir tus artículos.</div>
     </div>
     <button id="themeToggle" class="btn-toggle">Modo oscuro</button>
 </header>
 
 <div class="container">
 
-    <!-- PANEL LISTADO -->
+    <!-- PANEL LISTADO + DASHBOARD -->
     <section class="card">
         <div class="card-header">
             <div>
                 <div class="card-title">Artículos registrados</div>
-                <div class="card-sub">Gestiona los contenidos de tu base de conocimiento.</div>
+                <div class="card-sub">Dashboard + listado de contenidos.</div>
             </div>
             <button class="btn" id="btnNuevo">➕ Nuevo artículo</button>
         </div>
 
         <div class="top-bar">
             <input id="searchTabla" class="search-input" placeholder="Filtrar por título, categoría o resumen…" />
+        </div>
+
+        <!-- DASHBOARD MÉTRICAS -->
+        <div class="metrics-row">
             <div class="badge">
                 <span class="badge-dot"></span>
                 <span id="contadorArticulos">0 artículos</span>
             </div>
+            <div class="badge">
+                <span class="badge-dot"></span>
+                <span id="contadorVisibles">0 visibles</span>
+            </div>
+            <div class="badge badge-danger">
+                <span class="badge-dot"></span>
+                <span id="contadorDestacados">0 destacados</span>
+            </div>
         </div>
+        <div id="metricsCategorias" class="metrics-cats"></div>
 
         <div style="overflow-x:auto;">
             <table>
@@ -456,6 +523,12 @@
     </div>
 </div>
 
+<!-- OVERLAY CARGA -->
+<div id="loadingOverlay">
+    <div id="loadingText">Procesando…</div>
+    <div class="loader-bar"><div class="loader-bar-inner"></div></div>
+</div>
+
 <!-- QUILL -->
 <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
@@ -490,35 +563,71 @@ const quill = new Quill("#editor", {
 /* ---- ESTADO ---- */
 let articulosCache = [];
 
+/* ---- OVERLAY CARGA ---- */
+function setLoading(show, text="Procesando…"){
+    const overlay = document.getElementById("loadingOverlay");
+    const label = document.getElementById("loadingText");
+    label.textContent = text;
+    overlay.style.display = show ? "flex" : "none";
+}
+
 /* =======================
    CARGAR TABLA
 ======================= */
 async function cargarTabla(){
     const tbody = document.getElementById("tablaArticulos");
-    tbody.innerHTML = "<tr><td colspan='6'>Cargando...</td></tr>";
+    try{
+        setLoading(true,"Cargando artículos…");
+        tbody.innerHTML = "<tr><td colspan='6'>Cargando...</td></tr>";
 
-    const snap = await getDocs(colArticulos);
+        const snap = await getDocs(colArticulos);
 
-    articulosCache = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-    }));
+        articulosCache = snap.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        }));
 
-    // ordenar por fecha (más recientes primero)
-    articulosCache.sort((a,b)=>{
-        const fa = a.fecha ? new Date(a.fecha.toDate ? a.fecha.toDate() : a.fecha) : 0;
-        const fb = b.fecha ? new Date(b.fecha.toDate ? b.fecha.toDate() : b.fecha) : 0;
-        return fb - fa;
+        // ordenar por fecha (más recientes primero)
+        articulosCache.sort((a,b)=>{
+            const fa = a.fecha ? new Date(a.fecha.toDate ? a.fecha.toDate() : a.fecha) : 0;
+            const fb = b.fecha ? new Date(b.fecha.toDate ? b.fecha.toDate() : b.fecha) : 0;
+            return fb - fa;
+        });
+
+        renderTabla(articulosCache);
+    }catch(e){
+        console.error(e);
+        alert("Error cargando artículos: " + e.message);
+    }finally{
+        setLoading(false);
+    }
+}
+
+function actualizarDashboard(lista){
+    const total = lista.length;
+    const visibles = lista.filter(a=>a.visibleAgentes).length;
+    const destacados = lista.filter(a=>a.destacado).length;
+
+    document.getElementById("contadorArticulos").textContent = total + " artículos";
+    document.getElementById("contadorVisibles").textContent = visibles + " visibles";
+    document.getElementById("contadorDestacados").textContent = destacados + " destacados";
+
+    const cats = {};
+    lista.forEach(a=>{
+        const c = a.categoria || "Sin categoría";
+        cats[c] = (cats[c] || 0) + 1;
     });
 
-    renderTabla(articulosCache);
+    const cont = document.getElementById("metricsCategorias");
+    cont.innerHTML = Object.keys(cats).map(c => 
+        `<span class="cat-pill">${c}: ${cats[c]}</span>`
+    ).join("");
 }
 
 function renderTabla(lista){
     const tbody = document.getElementById("tablaArticulos");
-    const contador = document.getElementById("contadorArticulos");
 
-    contador.textContent = lista.length + " artículos";
+    actualizarDashboard(lista);
 
     if(!lista.length){
         tbody.innerHTML = "<tr><td colspan='6'>Sin artículos registrados aún.</td></tr>";
@@ -600,40 +709,55 @@ async function guardarArticulo(){
         return;
     }
 
-    if(id){
-        await updateDoc(doc(db,"articulos",id), data);
-        alert("Artículo actualizado.");
-    }else{
-        await addDoc(colArticulos, data);
-        alert("Artículo creado.");
+    try{
+        setLoading(true, id ? "Actualizando artículo…" : "Guardando artículo…");
+        if(id){
+            await updateDoc(doc(db,"articulos",id), data);
+            alert("Artículo actualizado.");
+        }else{
+            await addDoc(colArticulos, data);
+            alert("Artículo creado.");
+        }
+        limpiarFormulario();
+        await cargarTabla();
+    }catch(e){
+        console.error(e);
+        alert("Error al guardar: " + e.message);
+    }finally{
+        setLoading(false);
     }
-
-    limpiarFormulario();
-    await cargarTabla();
 }
 
 /* =======================
    EDITAR
 ======================= */
 window.editar = async function(id){
-    const ref = doc(db,"articulos",id);
-    const s = await getDoc(ref);
-    if(!s.exists()){
-        alert("No se encontró el artículo");
-        return;
+    try{
+        setLoading(true,"Cargando artículo para edición…");
+        const ref = doc(db,"articulos",id);
+        const s = await getDoc(ref);
+        if(!s.exists()){
+            alert("No se encontró el artículo");
+            return;
+        }
+        const a = s.data();
+
+        document.getElementById("articuloId").value = id;
+        document.getElementById("titulo").value = a.titulo || "";
+        document.getElementById("categoria").value = a.categoria || "";
+        document.getElementById("resumen").value = a.resumen || "";
+        document.getElementById("visibleAgentes").value = a.visibleAgentes ? "true" : "false";
+        document.getElementById("destacado").value = a.destacado ? "true" : "false";
+        quill.root.innerHTML = a.contenido || "";
+
+        document.getElementById("formTitle").textContent = "Editar artículo";
+        window.scrollTo({top:document.body.scrollHeight, behavior:"smooth"});
+    }catch(e){
+        console.error(e);
+        alert("Error al cargar para editar: " + e.message);
+    }finally{
+        setLoading(false);
     }
-    const a = s.data();
-
-    document.getElementById("articuloId").value = id;
-    document.getElementById("titulo").value = a.titulo || "";
-    document.getElementById("categoria").value = a.categoria || "";
-    document.getElementById("resumen").value = a.resumen || "";
-    document.getElementById("visibleAgentes").value = a.visibleAgentes ? "true" : "false";
-    document.getElementById("destacado").value = a.destacado ? "true" : "false";
-    quill.root.innerHTML = a.contenido || "";
-
-    document.getElementById("formTitle").textContent = "Editar artículo";
-    window.scrollTo({top:document.body.scrollHeight, behavior:"smooth"});
 };
 
 /* =======================
@@ -641,9 +765,17 @@ window.editar = async function(id){
 ======================= */
 window.eliminar = async function(id){
     if(!confirm("¿Eliminar este artículo?")) return;
-    await deleteDoc(doc(db,"articulos",id));
-    alert("Artículo eliminado.");
-    await cargarTabla();
+    try{
+        setLoading(true,"Eliminando artículo…");
+        await deleteDoc(doc(db,"articulos",id));
+        alert("Artículo eliminado.");
+        await cargarTabla();
+    }catch(e){
+        console.error(e);
+        alert("Error al eliminar: " + e.message);
+    }finally{
+        setLoading(false);
+    }
 };
 
 /* =======================
