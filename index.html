@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Navegador FE – Base de Conocimiento</title>
 
+<!-- ========= ESTILOS ========= -->
 <style>
     :root {
         --bg: #f5f7fa;
@@ -37,12 +38,8 @@
         top: 0;
         z-index: 10;
     }
-    h1 {
-        font-size: 22px;
-        margin: 0;
-        color: var(--accent);
-    }
-    #themeToggle, #adminBtn {
+    h1 { margin: 0; font-size: 22px; color: var(--accent); }
+    #themeToggle, #btnAdmin {
         background: var(--accent);
         color: white;
         border: none;
@@ -60,18 +57,13 @@
         background: var(--card);
         color: var(--text);
     }
-    .container {
-        max-width: 1100px;
-        margin: auto;
-        padding: 20px;
-    }
+    .container { max-width: 1100px; margin: auto; padding: 20px; }
     .section-title {
         font-size: 18px;
         margin-top: 30px;
         font-weight: bold;
         color: var(--accent);
     }
-    /* Cards */
     .results {
         margin-top: 20px;
         display: grid;
@@ -87,56 +79,35 @@
         transition: .2s;
     }
     .card:hover { transform: translateY(-3px); }
-
-    .sort-box {
-        display:flex;
-        gap:10px;
-        margin-top:10px;
+    .card-category {
+        display: inline-block;
+        padding: 3px 8px;
+        background: var(--accent);
+        color: white;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-top: 5px;
     }
-    select {
-        padding:8px;
-        border-radius:6px;
-        border:1px solid #9993;
-        background:var(--card);
-        color:var(--text);
-    }
-
-    /* Pagination */
+    /* PAGINACIÓN */
     .pagination {
-        display:flex;
-        gap:6px;
-        margin:25px 0;
-        flex-wrap:wrap;
-    }
-    .page-btn {
-        padding:6px 12px;
-        border-radius:6px;
-        border:none;
-        cursor:pointer;
-        background:var(--card);
-        box-shadow:0 2px 4px var(--shadow);
-    }
-    .page-btn.active {
-        background:var(--accent);
-        color:white;
-        font-weight:bold;
-    }
-
-    /* Historial */
-    .history-box {
-        margin-top: 15px;
+        margin-top: 25px;
         display: flex;
-        gap: 10px;
+        justify-content: center;
+        gap: 8px;
         flex-wrap: wrap;
     }
-    .history-item {
-        background: var(--card);
-        padding: 6px 10px;
-        border-radius: 6px;
+    .page-btn {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: none;
         cursor: pointer;
-        border: 1px solid #9993;
+        background: var(--card);
+        border: 1px solid #9994;
     }
-
+    .page-btn.active {
+        background: var(--accent);
+        color: white;
+    }
     /* Modal */
     #modal {
         display: none;
@@ -151,47 +122,35 @@
         max-width: 850px;
         margin: auto;
         background: var(--card);
-        color: var(--text);
         padding: 30px;
         border-radius: 12px;
+        color: var(--text);
     }
     #closeModal {
-        background: var(--accent);
-        color: white;
+        float:right;
         padding: 8px 14px;
-        border-radius: 6px;
-        border: none;
-        float: right;
+        background: var(--accent);
+        border:none;
+        border-radius:8px;
+        color:white;
     }
-
 </style>
 </head>
 <body>
 
 <header>
     <h1>📘 Navegador FE</h1>
-
     <div>
-        <button id="adminBtn" onclick="location.href='admin.html'">Admin</button>
+        <button id="btnAdmin">Admin</button>
         <button id="themeToggle">Modo oscuro</button>
     </div>
 </header>
 
 <div class="container">
 
-    <input id="searchBar" placeholder="Buscar: SBS, speech, flujos, productos…" />
+    <input id="searchBar" placeholder="Buscar: SBS, speech, flujos…" />
 
-    <div class="history-box" id="historyBox"></div>
-
-    <div class="sort-box">
-        <select id="ordenar">
-            <option value="recientes">Más recientes</option>
-            <option value="destacados">Destacados</option>
-            <option value="az">A–Z</option>
-        </select>
-    </div>
-
-    <div class="section-title">⭐ Artículos Recomendados</div>
+    <div class="section-title">⭐ Recomendados</div>
     <div id="topResults" class="results"></div>
 
     <div class="section-title">📄 Resultados</div>
@@ -201,7 +160,7 @@
 
 </div>
 
-<!-- Modal -->
+<!-- MODAL -->
 <div id="modal">
     <div class="modal-content">
         <button id="closeModal">Cerrar</button>
@@ -211,8 +170,8 @@
     </div>
 </div>
 
+<!-- ========= FIREBASE + LÓGICA ========= -->
 <script type="module">
-/* ===================== FIREBASE ===================== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -228,134 +187,102 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ===================== VARIABLES ===================== */
 let articulos = [];
-let filtrados = [];
 let pagina = 1;
 const porPagina = 12;
 
-const searchBar = document.getElementById("searchBar");
-const resultsEl = document.getElementById("results");
-const topEl = document.getElementById("topResults");
-const pagEl = document.getElementById("pagination");
+/* =============== ADMIN LOGIN FIX ================== */
+document.getElementById("btnAdmin").onclick = () => {
+    localStorage.removeItem("efectiva_login_ok"); // fuerza login
+    window.location.href = "admin.html";
+};
 
-/* ===================== CARGA ===================== */
+/* ===================== CARGAR FIRESTORE ===================== */
 async function cargarArticulos() {
     const snap = await getDocs(collection(db, "articulos"));
     articulos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    ordenar();
-    filtrar();
-    renderTop();
+    const rec = [...articulos].sort((a,b)=> new Date(b.fecha) - new Date(a.fecha)).slice(0,5);
+    renderResults(rec, topResults);
+
     renderPagina();
 }
 cargarArticulos();
 
-/* ===================== ORDENAR ===================== */
-document.getElementById("ordenar").onchange = () => {
-    ordenar();
-    filtrar();
-    renderPagina();
-};
-
-function ordenar() {
-    const mode = document.getElementById("ordenar").value;
-
-    if (mode === "recientes") 
-        articulos.sort((a,b)=> new Date(b.fecha) - new Date(a.fecha));
-
-    if (mode === "destacados")
-        articulos.sort((a,b)=> b.destacado - a.destacado);
-
-    if (mode === "az")
-        articulos.sort((a,b)=> a.titulo.localeCompare(b.titulo));
-}
-
-/* ===================== FILTRAR ===================== */
-function filtrar() {
-    const q = normalizar(searchBar.value);
-    filtrados = articulos.filter(a =>
-        normalizar(a.titulo).includes(q) ||
-        normalizar(a.resumen).includes(q) ||
-        normalizar(a.categoria).includes(q) ||
-        normalizar(a.contenido).includes(q)
-    );
-}
-
 /* ===================== PAGINACIÓN ===================== */
 function renderPagina() {
     const inicio = (pagina - 1) * porPagina;
-    const visibles = filtrados.slice(inicio, inicio + porPagina);
+    const paginados = articulos.slice(inicio, inicio + porPagina);
 
-    resultsEl.innerHTML = visibles.map(a => cardHTML(a)).join("");
+    renderResults(paginados, results);
 
-    renderPaginacion();
+    const total = Math.ceil(articulos.length / porPagina);
+    renderPagination(total);
 }
 
-function renderPaginacion() {
-    const total = Math.ceil(filtrados.length / porPagina);
-    pagEl.innerHTML = "";
-
-    for (let i=1; i<=total; i++) {
-        pagEl.innerHTML += `
-            <button class="page-btn ${i===pagina?'active':''}" onclick="ir(${i})">${i}</button>
-        `;
+function renderPagination(total) {
+    pagination.innerHTML = "";
+    for(let i=1;i<=total;i++){
+        const b = document.createElement("button");
+        b.className="page-btn"+(i===pagina?" active":"");
+        b.innerText=i;
+        b.onclick=()=>{pagina=i;renderPagina();}
+        pagination.appendChild(b);
     }
 }
 
-window.ir = function(n){
-    pagina = n;
-    renderPagina();
-};
-
-/* ===================== TARJETAS ===================== */
-function cardHTML(a) {
-    return `
-    <div class="card" onclick="abrir('${a.id}')">
-        <h3>${a.titulo}</h3>
-        <div class="card-category">${a.categoria}</div>
-        <p>${a.resumen}</p>
-    </div>`;
-}
-
-/* ===================== TOP 5 ===================== */
-function renderTop(){
-    const top = [...articulos]
-        .sort((a,b)=> new Date(b.fecha) - new Date(a.fecha))
-        .slice(0,5);
-
-    topEl.innerHTML = top.map(a => cardHTML(a)).join("");
-}
-
-/* ===================== BUSCAR ===================== */
-searchBar.oninput = ()=> {
-    filtrar();
-    pagina = 1;
-    renderPagina();
-};
-
-function normalizar(t){
-    return t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+/* ===================== RENDER CARDS ===================== */
+function renderResults(items, target) {
+    target.innerHTML = items.map(a => `
+        <div class="card" onclick="abrir('${a.id}')">
+            <h3>${a.titulo}</h3>
+            <div class="card-category">${a.categoria}</div>
+            <p>${a.resumen}</p>
+        </div>
+    `).join("");
 }
 
 /* ===================== MODAL ===================== */
 window.abrir = function(id){
     const a = articulos.find(x=>x.id===id);
-    modalTitle.innerHTML = a.titulo;
-    modalCategory.innerHTML = a.categoria;
+    modalTitle.innerText = a.titulo;
+    modalCategory.innerText = a.categoria;
     modalContent.innerHTML = a.contenido;
-    modal.style.display="block";
+    modal.style.display = "block";
 };
 closeModal.onclick = ()=> modal.style.display="none";
 
+/* ===================== BUSCAR ===================== */
+function normalizar(t){
+    return t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+}
+
+searchBar.addEventListener("input", e=>{
+    const q = normalizar(e.target.value);
+    if(!q){ renderPagina(); return; }
+
+    articulosFiltrados = articulos
+    .map(a=>{
+        let s=0;
+        if(normalizar(a.titulo).includes(q)) s+=5;
+        if(normalizar(a.resumen).includes(q)) s+=3;
+        if(normalizar(a.categoria).includes(q)) s+=2;
+        if(normalizar(a.contenido).includes(q)) s+=1;
+        return {...a,score:s};
+    })
+    .filter(a=>a.score>0)
+    .sort((a,b)=>b.score-a.score);
+
+    renderResults(articulosFiltrados, results);
+    pagination.innerHTML="";
+});
+
 /* ===================== MODO OSCURO ===================== */
-themeToggle.onclick = () => {
+themeToggle.onclick=()=>{
     document.body.classList.toggle("dark");
-    themeToggle.innerText = 
-        document.body.classList.contains("dark") 
-        ? "Modo claro" 
-        : "Modo oscuro";
+    themeToggle.innerText=document.body.classList.contains("dark")?"Modo claro":"Modo oscuro";
 };
 </script>
+
 </body>
 </html>
