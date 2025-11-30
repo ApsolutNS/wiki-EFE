@@ -581,7 +581,7 @@ async function cargarArticulos() {
             if (destDiff !== 0) return destDiff;
             return toDateSafe(b.fecha) - toDateSafe(a.fecha);
         })
-        .slice(0, 5);
+        .slice(0, 4);
     renderResults(recomendados, topEl);
 
     // Inicial: sin filtros, orden por recientes
