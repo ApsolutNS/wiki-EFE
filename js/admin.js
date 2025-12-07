@@ -1,7 +1,7 @@
 // ======================================================
 // IMPORTS
 // ======================================================
-import { db } from "./firebase-config.js";
+import { db, withAuth } from "./firebase-config.js";
 import { registrarLog } from "./logs.js";
 import { toDateSafe } from "./utils.js";
 import { intentarLogin, getCurrentUser, logout } from "./admin-auth.js";
@@ -18,7 +18,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ======================================================
-// ESTADO GLOBAL
+// VARIABLES GLOBALES
 // ======================================================
 let articulosCache = [];
 let quill;
@@ -40,11 +40,11 @@ function ocultarPanel() {
     document.getElementById("loginScreen").style.display = "flex";
 }
 
-// Si había sesión guardada → entrar directo
-const usuarioSesión = getCurrentUser();
-if (usuarioSesión) mostrarPanel();
+// Sesión persistida
+const usuarioSesion = getCurrentUser();
+if (usuarioSesion) mostrarPanel();
 
-// Evento real de login
+// Evento login
 document.getElementById("loginBtn").addEventListener("click", async () => {
 
     const user = document.getElementById("loginUser").value.trim();
@@ -78,7 +78,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 });
 
 // ======================================================
-// OVERLAY CARGA
+// OVERLAY DE CARGA
 // ======================================================
 function setLoading(show, text = "Procesando…") {
     const overlay = document.getElementById("loadingOverlay");
@@ -97,12 +97,15 @@ async function cargarTabla() {
         setLoading(true, "Cargando artículos…");
         tbody.innerHTML = "<tr><td colspan='6'>Cargando...</td></tr>";
 
-        const snap = await getDocs(colArticulos);
+        // 🔐 CONSULTA SEGURA
+        const snap = await getDocs(colArticulos, withAuth());
+
         articulosCache = snap.docs.map(d => ({
             id: d.id,
             ...d.data()
         }));
 
+        // Ordenar por fecha
         articulosCache.sort((a, b) => {
             const fa = a.fecha ? toDateSafe(a.fecha) : 0;
             const fb = b.fecha ? toDateSafe(b.fecha) : 0;
@@ -110,6 +113,7 @@ async function cargarTabla() {
         });
 
         renderTabla(articulosCache);
+
     } catch (e) {
         console.error(e);
         alert("Error cargando artículos: " + e.message);
@@ -132,9 +136,7 @@ function actualizarDashboard(lista) {
     });
 
     document.getElementById("metricsCategorias").innerHTML =
-        Object.keys(cats)
-            .map(c => `<span class="cat-pill">${c}: ${cats[c]}</span>`)
-            .join("");
+        Object.keys(cats).map(c => `<span class="cat-pill">${c}: ${cats[c]}</span>`).join("");
 }
 
 function renderTabla(lista) {
@@ -171,9 +173,11 @@ function renderTabla(lista) {
     tbody.querySelectorAll(".btn-ver").forEach(btn =>
         btn.addEventListener("click", () => verArticulo(btn.dataset.id))
     );
+
     tbody.querySelectorAll(".btn-editar").forEach(btn =>
         btn.addEventListener("click", () => editarArticulo(btn.dataset.id))
     );
+
     tbody.querySelectorAll(".btn-eliminar").forEach(btn =>
         btn.addEventListener("click", () => eliminarArticulo(btn.dataset.id))
     );
@@ -260,7 +264,7 @@ async function crearArticulo(data, usuarioEmail) {
         fecha: serverTimestamp()
     };
 
-    const ref = await addDoc(colArticulos, finalData);
+    const ref = await addDoc(colArticulos, finalData, withAuth());
 
     await registrarLog({
         articuloId: ref.id,
@@ -278,8 +282,8 @@ async function actualizarArticulo(id, data, usuarioEmail) {
     setLoading(true, "Actualizando artículo…");
 
     const ref = doc(db, "articulos", id);
-    const snap = await getDoc(ref);
 
+    const snap = await getDoc(ref, withAuth());
     if (!snap.exists()) {
         alert("El artículo ya no existe.");
         return;
@@ -295,7 +299,7 @@ async function actualizarArticulo(id, data, usuarioEmail) {
         fecha: serverTimestamp()
     };
 
-    await setDoc(ref, finalData, { merge: true });
+    await setDoc(ref, finalData, { merge: true }, withAuth());
 
     await registrarLog({
         articuloId: id,
@@ -315,10 +319,10 @@ async function eliminarArticulo(id) {
     setLoading(true, "Eliminando artículo…");
 
     const ref = doc(db, "articulos", id);
-    const snap = await getDoc(ref);
+    const snap = await getDoc(ref, withAuth());
     const anterior = snap.exists() ? snap.data() : null;
 
-    await deleteDoc(ref);
+    await deleteDoc(ref, withAuth());
 
     await registrarLog({
         articuloId: id,
@@ -378,7 +382,7 @@ function initThemeToggle() {
 // ======================================================
 document.addEventListener("DOMContentLoaded", () => {
 
-    // Inicializar Quill
+    // Editor Quill
     quill = new Quill("#editor", {
         theme: "snow",
         placeholder: "Escribe aquí el contenido completo del artículo…"
@@ -398,6 +402,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Tema
     initThemeToggle();
 
-    // Cargar tabla inicial
+    // Cargar tabla
     cargarTabla();
 });
