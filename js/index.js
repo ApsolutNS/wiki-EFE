@@ -167,9 +167,10 @@ document.addEventListener("keydown", e => {
 // Nuevo evento para el botón "Panel Admin"
 btnAdmin.addEventListener("click", () => {
     // ⚠️ Importante: Reemplaza 'admin.html' con la ruta real de tu panel
-    window.location.href = admin.html; 
+    window.location.href = 'admin.html'; 
 });
 
 /* ================= INICIO ================= */
 cargarArticulos();
+
 
