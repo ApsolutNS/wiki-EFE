@@ -39,7 +39,6 @@ async function cargarArticulos() {
 
         renderRecomendados();
         aplicarFiltrosYBusqueda();
-
     } catch (e) {
         console.error("Error cargando artículos:", e);
     }
@@ -101,6 +100,7 @@ function ordenarLista(lista) {
         );
     }
 
+    // Más recientes primero
     return arr.sort((a, b) => toDateSafe(b.fecha) - toDateSafe(a.fecha));
 }
 
@@ -184,7 +184,7 @@ function renderPagination(totalPaginas) {
 
     [...paginationEl.querySelectorAll(".page-btn")].forEach(btn => {
         btn.addEventListener("click", () => {
-            paginaActual = parseInt(btn.dataset.page);
+            paginaActual = parseInt(btn.dataset.page, 10);
             renderPagina();
             window.scrollTo({ top: 0, behavior: "smooth" });
         });
@@ -196,10 +196,26 @@ function abrirArticulo(id) {
     const art = articulosAll.find(a => a.id === id);
     if (!art) return;
 
-    modalTitle.textContent = art.titulo;
-    modalCategory.textContent = art.categoria;
+    modalTitle.textContent = art.titulo || "";
+    modalCategory.textContent = art.categoria || "";
 
-    modalContent.innerHTML = DOMPurify.sanitize(art.contenido || "");
+    // 🔒 Sanitización fuerte con DOMPurify
+    modalContent.innerHTML = DOMPurify.sanitize(art.contenido || "", {
+        USE_PROFILES: { html: true },
+        ALLOWED_TAGS: [
+            "p", "b", "strong", "i", "u", "em", "br",
+            "ul", "ol", "li",
+            "span", "div",
+            "h1", "h2", "h3", "h4", "h5",
+            "table", "thead", "tbody", "tr", "th", "td",
+            "code", "pre",
+            "a"
+        ],
+        ALLOWED_ATTR: ["class", "href", "target", "rel"],
+        ALLOW_DATA_ATTR: false,
+        FORBID_TAGS: ["style", "script", "svg", "math", "iframe", "object", "embed"],
+        FORBID_ATTR: ["onerror", "onload", "onclick", "onfocus", "onmouseover"]
+    });
 
     modal.style.display = "block";
 }
@@ -207,6 +223,12 @@ function abrirArticulo(id) {
 closeModal.onclick = () => {
     modal.style.display = "none";
 };
+
+window.addEventListener("click", e => {
+    if (e.target === modal) {
+        modal.style.display = "none";
+    }
+});
 
 /* ================== EVENTOS ================== */
 categoriaSelect.addEventListener("change", e => {
