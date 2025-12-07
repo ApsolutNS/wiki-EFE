@@ -43,6 +43,7 @@ function ocultarPanel() {
 const usuario = getCurrentUser();
 if (usuario) mostrarPanel();
 
+// EVENTO REAL DE LOGIN
 document.getElementById("loginBtn").addEventListener("click", async () => {
     const user = document.getElementById("loginUser").value.trim();
     const pass = document.getElementById("loginPass").value.trim();
@@ -58,6 +59,15 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 
     error.style.display = "none";
     mostrarPanel();
+
+    // Registrar log de login
+    await registrarLog({
+        articuloId: null,
+        accion: "login",
+        antes: null,
+        despues: { usuario: user },
+        usuarioEmail: user
+    });
 });
 
 // ======================================================
@@ -230,13 +240,6 @@ async function guardarArticuloHandler() {
     }
 }
 
-// (AQUÍ SIGUE TODO IGUAL PARA CREAR/EDITAR/ELIMINAR, MODALES, TEMA Y INIT)
-// *Para ahorrar espacio no lo duplico porque NO tenía errores.*
-
-
-// ======================================================
-// CREAR / EDITAR / ELIMINAR + LOGS
-// ======================================================
 async function crearArticulo(data, usuarioEmail) {
     setLoading(true, "Guardando artículo…");
 
@@ -321,7 +324,7 @@ async function eliminarArticulo(id) {
 }
 
 // ======================================================
-// VER / EDITAR / MODAL
+// VER / MODAL
 // ======================================================
 function verArticulo(id) {
     const a = articulosCache.find(x => x.id === id);
@@ -342,6 +345,9 @@ function verArticulo(id) {
     };
 }
 
+// ======================================================
+// EDITAR
+// ======================================================
 async function editarArticulo(id) {
     const ref = doc(db, "articulos", id);
     const snap = await getDoc(ref);
@@ -412,9 +418,6 @@ document.addEventListener("DOMContentLoaded", () => {
         theme: "snow",
         placeholder: "Escribe aquí el contenido completo del artículo…"
     });
-
-    // Login
-    initLogin();
 
     // Formulario
     document.getElementById("btnGuardar").addEventListener("click", guardarArticuloHandler);
