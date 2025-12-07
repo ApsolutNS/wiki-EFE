@@ -1,9 +1,10 @@
-// =============================
+// ======================================================
 // IMPORTS
-// =============================
+// ======================================================
 import { db } from "./firebase-config.js";
 import { registrarLog } from "./logs.js";
 import { toDateSafe } from "./utils.js";
+import { intentarLogin, getCurrentUser, logout } from "./admin-auth.js";
 
 import {
     collection,
@@ -16,67 +17,74 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// =============================
-// CONSTANTES LOGIN LOCAL
-// =============================
-const USER = "Efectiv-Wiki";
-const PASS = "Miwiki.efectiv-2025*";
-const AUTH_FLAG = "efectiva_login_ok";
-const AUTH_USER_KEY = "efectiva_login_user";
-
-// =============================
+// ======================================================
 // ESTADO GLOBAL
-// =============================
+// ======================================================
 let articulosCache = [];
 let quill;
 
-// =============================
-// LOGIN
-// =============================
+const colArticulos = collection(db, "articulos");
+
+// ======================================================
+// LOGIN + CONTROL DE SESIÓN
+// ======================================================
+
 function mostrarPanel() {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("panel").style.display = "block";
 }
 
-function obtenerUsuarioActual() {
-    return localStorage.getItem(AUTH_USER_KEY) || "admin@desconocido";
+function ocultarPanel() {
+    document.getElementById("panel").style.display = "none";
+    document.getElementById("loginScreen").style.display = "flex";
 }
 
-function initLogin() {
-    const loginBtn = document.getElementById("loginBtn");
-    const loginUser = document.getElementById("loginUser");
-    const loginPass = document.getElementById("loginPass");
-    const loginError = document.getElementById("loginError");
+async function initLogin() {
+    const btn = document.getElementById("loginBtn");
+    const userInput = document.getElementById("loginUser");
+    const passInput = document.getElementById("loginPass");
+    const errorBox = document.getElementById("loginError");
 
-    // ya logueado antes
-    if (localStorage.getItem(AUTH_FLAG) === "1") {
+    // Sesión previa
+    const saved = getCurrentUser();
+    if (saved) {
         mostrarPanel();
     }
 
-    function intentarLogin() {
-        const u = loginUser.value.trim();
-        const p = loginPass.value.trim();
+    async function hacerLogin() {
+        const u = userInput.value.trim();
+        const p = passInput.value.trim();
 
-        if (u === USER && p === PASS) {
-            localStorage.setItem(AUTH_FLAG, "1");
-            localStorage.setItem(AUTH_USER_KEY, u);
-            loginError.style.display = "none";
-            mostrarPanel();
-        } else {
-            loginError.style.display = "block";
+        const result = await intentarLogin(u, p);
+
+        if (!result) {
+            errorBox.textContent = "Credenciales incorrectas";
+            errorBox.style.display = "block";
+            return;
         }
+
+        errorBox.style.display = "none";
+        mostrarPanel();
+
+        // Registrar log de login
+        await registrarLog({
+            articuloId: null,
+            accion: "login",
+            antes: null,
+            despues: { usuario: u },
+            usuarioEmail: u
+        });
     }
 
-    loginBtn.addEventListener("click", intentarLogin);
-
-    loginPass.addEventListener("keyup", (e) => {
-        if (e.key === "Enter") intentarLogin();
+    btn.addEventListener("click", hacerLogin);
+    passInput.addEventListener("keyup", e => {
+        if (e.key === "Enter") hacerLogin();
     });
 }
 
-// =============================
+// ======================================================
 // OVERLAY CARGA
-// =============================
+// ======================================================
 function setLoading(show, text = "Procesando…") {
     const overlay = document.getElementById("loadingOverlay");
     const label = document.getElementById("loadingText");
@@ -84,11 +92,9 @@ function setLoading(show, text = "Procesando…") {
     overlay.style.display = show ? "flex" : "none";
 }
 
-// =============================
-// DASHBOARD + TABLA
-// =============================
-const colArticulos = collection(db, "articulos");
-
+// ======================================================
+// CARGAR TABLA + DASHBOARD
+// ======================================================
 async function cargarTabla() {
     const tbody = document.getElementById("tablaArticulos");
 
@@ -102,7 +108,6 @@ async function cargarTabla() {
             ...d.data()
         }));
 
-        // ordenar por fecha (más recientes primero)
         articulosCache.sort((a, b) => {
             const fa = a.fecha ? toDateSafe(a.fecha) : 0;
             const fb = b.fecha ? toDateSafe(b.fecha) : 0;
@@ -133,10 +138,10 @@ function actualizarDashboard(lista) {
         cats[c] = (cats[c] || 0) + 1;
     });
 
-    const cont = document.getElementById("metricsCategorias");
-    cont.innerHTML = Object.keys(cats).map(c =>
-        `<span class="cat-pill">${c}: ${cats[c]}</span>`
-    ).join("");
+    document.getElementById("metricsCategorias").innerHTML =
+        Object.keys(cats)
+            .map(c => `<span class="cat-pill">${c}: ${cats[c]}</span>`)
+            .join("");
 }
 
 function renderTabla(lista) {
@@ -148,54 +153,47 @@ function renderTabla(lista) {
         return;
     }
 
-    const rows = lista.map(a => {
-        const fechaStr = a.fecha
-            ? toDateSafe(a.fecha).toLocaleDateString("es-PE")
-            : "-";
+    tbody.innerHTML = lista.map(a => {
+        const fechaStr = a.fecha ? toDateSafe(a.fecha).toLocaleDateString("es-PE") : "-";
 
         return `
-        <tr>
-            <td>${a.titulo || ""}</td>
-            <td>${a.categoria || ""}</td>
-            <td>${a.visibleAgentes ? "Sí" : "No"}</td>
-            <td>${a.destacado ? "⭐" : "—"}</td>
-            <td>${fechaStr}</td>
-            <td>
-                <div class="actions">
-                    <button class="btn-xs btn-ver" data-id="${a.id}">Ver</button>
-                    <button class="btn-xs primary btn-editar" data-id="${a.id}">Editar</button>
-                    <button class="btn-xs danger btn-eliminar" data-id="${a.id}">Eliminar</button>
-                </div>
-            </td>
-        </tr>`;
+            <tr>
+                <td>${a.titulo || ""}</td>
+                <td>${a.categoria || ""}</td>
+                <td>${a.visibleAgentes ? "Sí" : "No"}</td>
+                <td>${a.destacado ? "⭐" : "—"}</td>
+                <td>${fechaStr}</td>
+                <td>
+                    <div class="actions">
+                        <button class="btn-xs btn-ver" data-id="${a.id}">Ver</button>
+                        <button class="btn-xs primary btn-editar" data-id="${a.id}">Editar</button>
+                        <button class="btn-xs danger btn-eliminar" data-id="${a.id}">Eliminar</button>
+                    </div>
+                </td>
+            </tr>
+        `;
     }).join("");
 
-    tbody.innerHTML = rows;
-
-    // Eventos sin usar onclick inline (CSP friendly)
-    tbody.querySelectorAll(".btn-ver").forEach(btn => {
-        btn.addEventListener("click", () => verArticulo(btn.dataset.id));
-    });
-    tbody.querySelectorAll(".btn-editar").forEach(btn => {
-        btn.addEventListener("click", () => editarArticulo(btn.dataset.id));
-    });
-    tbody.querySelectorAll(".btn-eliminar").forEach(btn => {
-        btn.addEventListener("click", () => eliminarArticulo(btn.dataset.id));
-    });
+    tbody.querySelectorAll(".btn-ver").forEach(btn =>
+        btn.addEventListener("click", () => verArticulo(btn.dataset.id))
+    );
+    tbody.querySelectorAll(".btn-editar").forEach(btn =>
+        btn.addEventListener("click", () => editarArticulo(btn.dataset.id))
+    );
+    tbody.querySelectorAll(".btn-eliminar").forEach(btn =>
+        btn.addEventListener("click", () => eliminarArticulo(btn.dataset.id))
+    );
 }
 
-// =============================
-// BUSCADOR EN TABLA
-// =============================
+// ======================================================
+// BUSCADOR
+// ======================================================
 function initBuscadorTabla() {
     const searchInput = document.getElementById("searchTabla");
 
     searchInput.addEventListener("input", e => {
         const q = e.target.value.trim().toLowerCase();
-        if (!q) {
-            renderTabla(articulosCache);
-            return;
-        }
+        if (!q) return renderTabla(articulosCache);
 
         const filtrados = articulosCache.filter(a => {
             const t = (a.titulo || "").toLowerCase();
@@ -208,9 +206,9 @@ function initBuscadorTabla() {
     });
 }
 
-// =============================
+// ======================================================
 // FORMULARIO
-// =============================
+// ======================================================
 function limpiarFormulario() {
     document.getElementById("articuloId").value = "";
     document.getElementById("titulo").value = "";
@@ -229,72 +227,60 @@ async function guardarArticuloHandler() {
     const resumen = document.getElementById("resumen").value.trim();
     const visibleAgentes = document.getElementById("visibleAgentes").value === "true";
     const destacado = document.getElementById("destacado").value === "true";
-    const contenido = quill ? quill.root.innerHTML : "";
+    const contenido = quill.root.innerHTML;
 
     if (!titulo || !categoria || !resumen) {
         alert("Completa título, categoría y resumen.");
         return;
     }
 
-    const usuarioEmail = obtenerUsuarioActual();
+    const user = getCurrentUser()?.username || "desconocido";
 
-    const dataBase = {
-        titulo,
-        categoria,
-        resumen,
-        contenido,
-        visibleAgentes,
-        destacado
-    };
+    const base = { titulo, categoria, resumen, contenido, visibleAgentes, destacado };
 
     try {
-        const esEdicion = !!id;
-
-        if (esEdicion) {
-            await actualizarArticulo(id, dataBase, usuarioEmail);
+        if (id) {
+            await actualizarArticulo(id, base, user);
         } else {
-            await crearArticulo(dataBase, usuarioEmail);
+            await crearArticulo(base, user);
         }
-
         limpiarFormulario();
-        await cargarTabla();
-
+        cargarTabla();
     } catch (e) {
         console.error(e);
         alert("Error al guardar: " + e.message);
-    } finally {
-        setLoading(false);
     }
 }
 
-// =============================
-// CREAR / ACTUALIZAR / ELIMINAR + LOGS
-// =============================
-async function crearArticulo(dataBase, usuarioEmail) {
+// ======================================================
+// CREAR / EDITAR / ELIMINAR + LOGS
+// ======================================================
+async function crearArticulo(data, usuarioEmail) {
     setLoading(true, "Guardando artículo…");
 
-    const dataConMeta = {
-        ...dataBase,
+    const finalData = {
+        ...data,
         version: 1,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         fecha: serverTimestamp()
     };
 
-    const docRef = await addDoc(colArticulos, dataConMeta);
+    const ref = await addDoc(colArticulos, finalData);
 
     await registrarLog({
-        articuloId: docRef.id,
+        articuloId: ref.id,
         accion: "create",
         antes: null,
-        despues: dataConMeta,
+        despues: finalData,
         usuarioEmail
     });
 
     alert("Artículo creado.");
+    setLoading(false);
 }
 
-async function actualizarArticulo(id, dataBase, usuarioEmail) {
+async function actualizarArticulo(id, data, usuarioEmail) {
     setLoading(true, "Actualizando artículo…");
 
     const ref = doc(db, "articulos", id);
@@ -308,33 +294,31 @@ async function actualizarArticulo(id, dataBase, usuarioEmail) {
     const anterior = snap.data();
     const nuevaVersion = (anterior.version || 0) + 1;
 
-    const dataConMeta = {
-        ...dataBase,
+    const finalData = {
+        ...data,
         version: nuevaVersion,
         updatedAt: serverTimestamp(),
         fecha: serverTimestamp()
-        // createdAt se mantiene como está en Firestore (por merge)
     };
 
-    await setDoc(ref, dataConMeta, { merge: true });
+    await setDoc(ref, finalData, { merge: true });
 
     await registrarLog({
         articuloId: id,
         accion: "update",
         antes: anterior,
-        despues: dataConMeta,
+        despues: finalData,
         usuarioEmail
     });
 
     alert("Artículo actualizado.");
+    setLoading(false);
 }
 
 async function eliminarArticulo(id) {
     if (!confirm("¿Eliminar este artículo?")) return;
 
-    const usuarioEmail = obtenerUsuarioActual();
     setLoading(true, "Eliminando artículo…");
-
     const ref = doc(db, "articulos", id);
     const snap = await getDoc(ref);
     const anterior = snap.exists() ? snap.data() : null;
@@ -346,140 +330,102 @@ async function eliminarArticulo(id) {
         accion: "delete",
         antes: anterior,
         despues: null,
-        usuarioEmail
+        usuarioEmail: getCurrentUser()?.username
     });
 
     alert("Artículo eliminado.");
-    await cargarTabla();
+    cargarTabla();
+    setLoading(false);
 }
 
-// =============================
-// VER / PREVIEW
-// =============================
+// ======================================================
+// VER / EDITAR / MODAL
+// ======================================================
 function verArticulo(id) {
     const a = articulosCache.find(x => x.id === id);
     if (!a) return;
 
-    const modalTitle = document.getElementById("modalTitle");
-    const modalMeta = document.getElementById("modalMeta");
-    const modalContent = document.getElementById("modalContent");
-    const modal = document.getElementById("modal");
-    const btnCopiar = document.getElementById("btnCopiar");
+    document.getElementById("modalTitle").textContent = a.titulo || "";
+    document.getElementById("modalMeta").textContent =
+        `${a.categoria || ""} · ${toDateSafe(a.fecha).toLocaleString("es-PE")}`;
+    document.getElementById("modalContent").innerHTML = a.contenido || "";
 
-    modalTitle.textContent = a.titulo || "";
+    document.getElementById("modal").style.display = "block";
 
-    const fechaStr = a.fecha
-        ? toDateSafe(a.fecha).toLocaleString("es-PE")
-        : "";
-
-    modalMeta.textContent =
-        (a.categoria || "") + (fechaStr ? " · " + fechaStr : "");
-
-    modalContent.innerHTML = a.contenido || "";
-    modal.style.display = "block";
-
-    btnCopiar.onclick = async () => {
+    document.getElementById("btnCopiar").onclick = async () => {
         const tmp = document.createElement("div");
         tmp.innerHTML = a.contenido || "";
-        const textoPlano = tmp.innerText;
-        await navigator.clipboard.writeText(textoPlano);
-        alert("Contenido copiado al portapapeles.");
+        await navigator.clipboard.writeText(tmp.innerText);
+        alert("Contenido copiado.");
     };
 }
 
-// =============================
-// EDITAR
-// =============================
 async function editarArticulo(id) {
-    try {
-        setLoading(true, "Cargando artículo para edición…");
+    const ref = doc(db, "articulos", id);
+    const snap = await getDoc(ref);
 
-        const ref = doc(db, "articulos", id);
-        const s = await getDoc(ref);
+    if (!snap.exists()) return alert("Artículo no encontrado");
 
-        if (!s.exists()) {
-            alert("No se encontró el artículo.");
-            return;
-        }
+    const a = snap.data();
 
-        const a = s.data();
+    document.getElementById("articuloId").value = id;
+    document.getElementById("titulo").value = a.titulo || "";
+    document.getElementById("categoria").value = a.categoria || "";
+    document.getElementById("resumen").value = a.resumen || "";
+    document.getElementById("visibleAgentes").value = a.visibleAgentes ? "true" : "false";
+    document.getElementById("destacado").value = a.destacado ? "true" : "false";
 
-        document.getElementById("articuloId").value = id;
-        document.getElementById("titulo").value = a.titulo || "";
-        document.getElementById("categoria").value = a.categoria || "";
-        document.getElementById("resumen").value = a.resumen || "";
-        document.getElementById("visibleAgentes").value = a.visibleAgentes ? "true" : "false";
-        document.getElementById("destacado").value = a.destacado ? "true" : "false";
+    quill.root.innerHTML = a.contenido || "";
+    document.getElementById("formTitle").textContent = "Editar artículo";
 
-        if (quill) {
-            quill.root.innerHTML = a.contenido || "";
-        }
-
-        document.getElementById("formTitle").textContent = "Editar artículo";
-
-        window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: "smooth"
-        });
-
-    } catch (e) {
-        console.error(e);
-        alert("Error al cargar para editar: " + e.message);
-    } finally {
-        setLoading(false);
-    }
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 }
 
-// =============================
-// MODO OSCURO / CLARO
-// =============================
-function initThemeToggle() {
-    const themeBtn = document.getElementById("themeToggle");
-    const THEME_KEY = "fe_admin_theme";
-
-    function applyTheme(theme) {
-        if (theme === "dark") {
-            document.body.classList.add("dark");
-            themeBtn.textContent = "Modo claro";
-        } else {
-            document.body.classList.remove("dark");
-            themeBtn.textContent = "Modo oscuro";
-        }
-    }
-
-    const saved = localStorage.getItem(THEME_KEY) || "light";
-    applyTheme(saved);
-
-    themeBtn.addEventListener("click", () => {
-        const next = document.body.classList.contains("dark") ? "light" : "dark";
-        localStorage.setItem(THEME_KEY, next);
-        applyTheme(next);
-    });
-}
-
-// =============================
+// ======================================================
 // MODAL
-// =============================
+// ======================================================
 function initModal() {
     const modal = document.getElementById("modal");
-    const btnCerrarModal = document.getElementById("btnCerrarModal");
+    const close = document.getElementById("btnCerrarModal");
 
-    btnCerrarModal.addEventListener("click", () => {
-        modal.style.display = "none";
-    });
-
-    modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
-            modal.style.display = "none";
-        }
+    close.addEventListener("click", () => modal.style.display = "none");
+    modal.addEventListener("click", e => {
+        if (e.target === modal) modal.style.display = "none";
     });
 }
 
-// =============================
+// ======================================================
+// TEMA
+// ======================================================
+function initThemeToggle() {
+    const btn = document.getElementById("themeToggle");
+    const KEY = "fe_admin_theme";
+
+    function apply(theme) {
+        if (theme === "dark") {
+            document.body.classList.add("dark");
+            btn.textContent = "Modo claro";
+        } else {
+            document.body.classList.remove("dark");
+            btn.textContent = "Modo oscuro";
+        }
+    }
+
+    apply(localStorage.getItem(KEY) || "light");
+
+    btn.addEventListener("click", () => {
+        const next = document.body.classList.contains("dark") ? "light" : "dark";
+        localStorage.setItem(KEY, next);
+        apply(next);
+    });
+}
+
+// ======================================================
 // INIT GENERAL
-// =============================
+// ======================================================
 document.addEventListener("DOMContentLoaded", () => {
-    // Inicializar editor QUILL
+
+    // Editor
     quill = new Quill("#editor", {
         theme: "snow",
         placeholder: "Escribe aquí el contenido completo del artículo…"
@@ -488,12 +434,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Login
     initLogin();
 
-    // Botones formulario
+    // Formulario
     document.getElementById("btnGuardar").addEventListener("click", guardarArticuloHandler);
     document.getElementById("btnLimpiar").addEventListener("click", limpiarFormulario);
     document.getElementById("btnNuevo").addEventListener("click", limpiarFormulario);
 
-    // Buscador tabla
+    // Buscador
     initBuscadorTabla();
 
     // Modal
@@ -502,6 +448,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Tema
     initThemeToggle();
 
-    // Cargar artículos
+    // Cargar contenido
     cargarTabla();
 });
