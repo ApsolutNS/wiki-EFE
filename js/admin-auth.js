@@ -23,7 +23,7 @@ export async function intentarLogin(username, password) {
         collection(db, "admin_users"),
         where("username", "==", username),
         where("passwordHash", "==", passwordHash),
-        where("disabled", "==", true) // usuario no desactivado
+        where("disabled", "==", false) // usuario no desactivado
     );
 
     const snap = await getDocs(q);
