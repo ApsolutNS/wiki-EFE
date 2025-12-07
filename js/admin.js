@@ -29,6 +29,7 @@ const colArticulos = collection(db, "articulos");
 // LOGIN + CONTROL DE SESIÓN
 // ======================================================
 
+// Mostrar / ocultar panel
 function mostrarPanel() {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("panel").style.display = "block";
@@ -39,15 +40,22 @@ function ocultarPanel() {
     document.getElementById("loginScreen").style.display = "flex";
 }
 
-// Si ya está logueado → mostrar panel
-const usuario = getCurrentUser();
-if (usuario) mostrarPanel();
+// Si había sesión guardada → entrar directo
+const usuarioSesión = getCurrentUser();
+if (usuarioSesión) mostrarPanel();
 
-// EVENTO REAL DE LOGIN
+// Evento real de login
 document.getElementById("loginBtn").addEventListener("click", async () => {
+
     const user = document.getElementById("loginUser").value.trim();
     const pass = document.getElementById("loginPass").value.trim();
     const error = document.getElementById("loginError");
+
+    if (!user || !pass) {
+        error.textContent = "Complete usuario y contraseña.";
+        error.style.display = "block";
+        return;
+    }
 
     const result = await intentarLogin(user, pass);
 
@@ -60,7 +68,6 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     error.style.display = "none";
     mostrarPanel();
 
-    // Registrar log de login
     await registrarLog({
         articuloId: null,
         accion: "login",
@@ -81,7 +88,7 @@ function setLoading(show, text = "Procesando…") {
 }
 
 // ======================================================
-// CARGAR TABLA + DASHBOARD
+// TABLA + DASHBOARD
 // ======================================================
 async function cargarTabla() {
     const tbody = document.getElementById("tablaArticulos");
@@ -112,13 +119,11 @@ async function cargarTabla() {
 }
 
 function actualizarDashboard(lista) {
-    const total = lista.length;
-    const visibles = lista.filter(a => a.visibleAgentes).length;
-    const destacados = lista.filter(a => a.destacado).length;
-
-    document.getElementById("contadorArticulos").textContent = `${total} artículos`;
-    document.getElementById("contadorVisibles").textContent = `${visibles} visibles`;
-    document.getElementById("contadorDestacados").textContent = `${destacados} destacados`;
+    document.getElementById("contadorArticulos").textContent = `${lista.length} artículos`;
+    document.getElementById("contadorVisibles").textContent =
+        `${lista.filter(a => a.visibleAgentes).length} visibles`;
+    document.getElementById("contadorDestacados").textContent =
+        `${lista.filter(a => a.destacado).length} destacados`;
 
     const cats = {};
     lista.forEach(a => {
@@ -127,11 +132,14 @@ function actualizarDashboard(lista) {
     });
 
     document.getElementById("metricsCategorias").innerHTML =
-        Object.keys(cats).map(c => `<span class="cat-pill">${c}: ${cats[c]}</span>`).join("");
+        Object.keys(cats)
+            .map(c => `<span class="cat-pill">${c}: ${cats[c]}</span>`)
+            .join("");
 }
 
 function renderTabla(lista) {
     const tbody = document.getElementById("tablaArticulos");
+
     actualizarDashboard(lista);
 
     if (!lista.length) {
@@ -207,7 +215,7 @@ function limpiarFormulario() {
 }
 
 // ======================================================
-// CREAR / ACTUALIZAR / ELIMINAR
+// CRUD + LOGS
 // ======================================================
 async function guardarArticuloHandler() {
     const id = document.getElementById("articuloId").value.trim();
@@ -224,6 +232,7 @@ async function guardarArticuloHandler() {
     }
 
     const user = getCurrentUser()?.username || "desconocido";
+
     const base = { titulo, categoria, resumen, contenido, visibleAgentes, destacado };
 
     try {
@@ -304,6 +313,7 @@ async function eliminarArticulo(id) {
     if (!confirm("¿Eliminar este artículo?")) return;
 
     setLoading(true, "Eliminando artículo…");
+
     const ref = doc(db, "articulos", id);
     const snap = await getDoc(ref);
     const anterior = snap.exists() ? snap.data() : null;
@@ -324,52 +334,6 @@ async function eliminarArticulo(id) {
 }
 
 // ======================================================
-// VER / MODAL
-// ======================================================
-function verArticulo(id) {
-    const a = articulosCache.find(x => x.id === id);
-    if (!a) return;
-
-    document.getElementById("modalTitle").textContent = a.titulo || "";
-    document.getElementById("modalMeta").textContent =
-        `${a.categoria || ""} · ${toDateSafe(a.fecha).toLocaleString("es-PE")}`;
-    document.getElementById("modalContent").innerHTML = a.contenido || "";
-
-    document.getElementById("modal").style.display = "block";
-
-    document.getElementById("btnCopiar").onclick = async () => {
-        const tmp = document.createElement("div");
-        tmp.innerHTML = a.contenido || "";
-        await navigator.clipboard.writeText(tmp.innerText);
-        alert("Contenido copiado.");
-    };
-}
-
-// ======================================================
-// EDITAR
-// ======================================================
-async function editarArticulo(id) {
-    const ref = doc(db, "articulos", id);
-    const snap = await getDoc(ref);
-
-    if (!snap.exists()) return alert("Artículo no encontrado");
-
-    const a = snap.data();
-
-    document.getElementById("articuloId").value = id;
-    document.getElementById("titulo").value = a.titulo || "";
-    document.getElementById("categoria").value = a.categoria || "";
-    document.getElementById("resumen").value = a.resumen || "";
-    document.getElementById("visibleAgentes").value = a.visibleAgentes ? "true" : "false";
-    document.getElementById("destacado").value = a.destacado ? "true" : "false";
-
-    quill.root.innerHTML = a.contenido || "";
-    document.getElementById("formTitle").textContent = "Editar artículo";
-
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-}
-
-// ======================================================
 // MODAL
 // ======================================================
 function initModal() {
@@ -377,6 +341,7 @@ function initModal() {
     const close = document.getElementById("btnCerrarModal");
 
     close.addEventListener("click", () => modal.style.display = "none");
+
     modal.addEventListener("click", e => {
         if (e.target === modal) modal.style.display = "none";
     });
@@ -413,13 +378,13 @@ function initThemeToggle() {
 // ======================================================
 document.addEventListener("DOMContentLoaded", () => {
 
-    // Editor
+    // Inicializar Quill
     quill = new Quill("#editor", {
         theme: "snow",
         placeholder: "Escribe aquí el contenido completo del artículo…"
     });
 
-    // Formulario
+    // Botones formulario
     document.getElementById("btnGuardar").addEventListener("click", guardarArticuloHandler);
     document.getElementById("btnLimpiar").addEventListener("click", limpiarFormulario);
     document.getElementById("btnNuevo").addEventListener("click", limpiarFormulario);
@@ -433,6 +398,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Tema
     initThemeToggle();
 
-    // Cargar contenido
+    // Cargar tabla inicial
     cargarTabla();
 });
