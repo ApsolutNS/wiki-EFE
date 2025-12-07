@@ -2,7 +2,7 @@ import { db } from "./firebase-config.js";
 import { toDateSafe, normalizar, debounce } from "./utils.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* --- ELEMENTOS DOM --- */
+/* ================== ELEMENTOS DEL DOM ================== */
 const searchBar        = document.getElementById("searchBar");
 const categoriaSelect  = document.getElementById("categoriaSelect");
 const sortSelect       = document.getElementById("sortSelect");
@@ -13,27 +13,39 @@ const paginationEl     = document.getElementById("pagination");
 const infoResultadosEl = document.getElementById("infoResultados");
 const infoOrdenEl      = document.getElementById("infoOrden");
 const btnAdmin         = document.getElementById("btnAdmin");
+const modal            = document.getElementById("modal");
+const modalTitle       = document.getElementById("modalTitle");
+const modalCategory    = document.getElementById("modalCategory");
+const modalContent     = document.getElementById("modalContent");
+const closeModal       = document.getElementById("closeModal");
 
-/* --- ESTADO --- */
+/* ================== ESTADO ================== */
 let articulosAll = [];
 let articulosFiltrados = [];
 let paginaActual = 1;
 const POR_PAGINA = 12;
+
 let criterioOrden = "recientes";
 let filtroCategoria = "todas";
 
 /* ================== CARGAR ARTÍCULOS ================== */
 async function cargarArticulos() {
-    const snap = await getDocs(collection(db, "articulos"));
+    try {
+        const snap = await getDocs(collection(db, "articulos"));
 
-    articulosAll = snap.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(a => a.visibleAgentes !== false);
+        articulosAll = snap.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(a => a.visibleAgentes !== false);
 
-    renderRecomendados();
-    aplicarFiltrosYBusqueda();
+        renderRecomendados();
+        aplicarFiltrosYBusqueda();
+
+    } catch (e) {
+        console.error("Error cargando artículos:", e);
+    }
 }
 
+/* ================== RECOMENDADOS ================== */
 function renderRecomendados() {
     const recomendados = [...articulosAll]
         .sort((a, b) => {
@@ -45,7 +57,7 @@ function renderRecomendados() {
     renderResults(recomendados, topEl);
 }
 
-/* ================== BUSQUEDA + FILTROS ================== */
+/* ================== FILTROS Y BÚSQUEDA ================== */
 function aplicarFiltrosYBusqueda() {
     const q = normalizar(searchBar.value.trim());
 
@@ -73,6 +85,7 @@ function aplicarFiltrosYBusqueda() {
     renderPagina();
 }
 
+/* ================== ORDENAR LISTA ================== */
 function ordenarLista(lista) {
     const arr = [...lista];
 
@@ -91,7 +104,7 @@ function ordenarLista(lista) {
     return arr.sort((a, b) => toDateSafe(b.fecha) - toDateSafe(a.fecha));
 }
 
-/* ================== RENDER ================== */
+/* ================== RENDER PÁGINA ================== */
 function renderPagina() {
     const total = articulosFiltrados.length;
 
@@ -125,50 +138,77 @@ function renderPagina() {
     renderPagination(totalPaginas);
 }
 
+/* ================== RENDER TARJETAS ================== */
 function renderResults(items, target) {
     target.innerHTML = items
         .map(
             a => `
         <div class="card" data-id="${a.id}">
             <div class="card-title">${a.titulo}</div>
+
             <div class="card-meta-row">
                 <div class="card-category">${a.categoria}</div>
             </div>
+
             <div class="card-resumen">${a.resumen}</div>
         </div>
     `
         )
         .join("");
 
-    // Ya no usamos window.abrir, usamos una función local segura
     [...target.querySelectorAll(".card")].forEach(card => {
-        card.addEventListener("click", () => {
-            const id = card.dataset.id;
-            abrirArticulo(id);
+        card.addEventListener("click", () => abrirArticulo(card.dataset.id));
+    });
+}
+
+/* ================== PAGINACIÓN ================== */
+function renderPagination(totalPaginas) {
+    if (totalPaginas <= 1) {
+        paginationEl.innerHTML = "";
+        return;
+    }
+
+    let html = "";
+    for (let p = 1; p <= totalPaginas; p++) {
+        html += `
+            <button 
+                class="page-btn ${p === paginaActual ? "active" : ""}" 
+                data-page="${p}"
+            >
+                ${p}
+            </button>
+        `;
+    }
+
+    paginationEl.innerHTML = html;
+
+    [...paginationEl.querySelectorAll(".page-btn")].forEach(btn => {
+        btn.addEventListener("click", () => {
+            paginaActual = parseInt(btn.dataset.page);
+            renderPagina();
+            window.scrollTo({ top: 0, behavior: "smooth" });
         });
     });
 }
 
-/* ================= MODAL ================= */
+/* ================== MODAL ================== */
 function abrirArticulo(id) {
     const art = articulosAll.find(a => a.id === id);
     if (!art) return;
 
-    document.getElementById("modalTitle").textContent = art.titulo;
-    document.getElementById("modalCategory").textContent = art.categoria;
+    modalTitle.textContent = art.titulo;
+    modalCategory.textContent = art.categoria;
 
-    // Protección XSS usando DOMPurify
-    document.getElementById("modalContent").innerHTML =
-        DOMPurify.sanitize(art.contenido || "");
+    modalContent.innerHTML = DOMPurify.sanitize(art.contenido || "");
 
-    document.getElementById("modal").style.display = "block";
+    modal.style.display = "block";
 }
 
-document.getElementById("closeModal").onclick = () => {
-    document.getElementById("modal").style.display = "none";
+closeModal.onclick = () => {
+    modal.style.display = "none";
 };
 
-/* ================= EVENTOS ================= */
+/* ================== EVENTOS ================== */
 categoriaSelect.addEventListener("change", e => {
     filtroCategoria = e.target.value;
     aplicarFiltrosYBusqueda();
@@ -181,9 +221,7 @@ sortSelect.addEventListener("change", e => {
 
 searchBar.addEventListener(
     "input",
-    debounce(() => {
-        aplicarFiltrosYBusqueda();
-    }, 300)
+    debounce(() => aplicarFiltrosYBusqueda(), 300)
 );
 
 document.addEventListener("keydown", e => {
@@ -193,11 +231,26 @@ document.addEventListener("keydown", e => {
     }
 });
 
-// Botón "Panel Admin"
+/* Admin */
 btnAdmin.addEventListener("click", () => {
-    // ⚠️ Cambia esto si tu ruta real es diferente
     window.location.href = "admin.html";
 });
 
-/* ================= INICIO ================= */
+/* ================== MODO OSCURO ================== */
+const themeBtn = document.getElementById("themeToggle");
+
+themeBtn.addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+    const isDark = document.body.classList.contains("dark");
+    themeBtn.textContent = isDark ? "Modo claro" : "Modo oscuro";
+    localStorage.setItem("fe_dark_mode", isDark ? "1" : "0");
+});
+
+// Estado persistente
+if (localStorage.getItem("fe_dark_mode") === "1") {
+    document.body.classList.add("dark");
+    themeBtn.textContent = "Modo claro";
+}
+
+/* ================== INICIO ================== */
 cargarArticulos();
