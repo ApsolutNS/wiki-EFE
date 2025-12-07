@@ -4,7 +4,7 @@
 import { db } from "./firebase-config.js";
 import { registrarLog } from "./logs.js";
 import { toDateSafe } from "./utils.js";
-import { intentarLogin, getCurrentUser, logout } from "./admin-auth.js";
+import { intentarLogin, getCurrentUser } from "./admin-auth.js";
 
 import {
     collection,
@@ -84,13 +84,11 @@ function setLoading(show, text = "Procesando…") {
     const overlay = document.getElementById("loadingOverlay");
     const label = document.getElementById("loadingText");
 
-    // Si no existe el overlay en el HTML, simplemente no hacemos nada
-    if (!overlay || !label) return;
+    if (!overlay || !label) return; // seguridad para evitar errores
 
     label.textContent = text;
     overlay.style.display = show ? "flex" : "none";
 }
-
 
 // ======================================================
 // TABLA + DASHBOARD
@@ -102,8 +100,7 @@ async function cargarTabla() {
         setLoading(true, "Cargando artículos…");
         tbody.innerHTML = "<tr><td colspan='6'>Cargando...</td></tr>";
 
-        // 🔐 CONSULTA SEGURA
-        const snap = await getDocs(colArticulos, withAuth());
+        const snap = await getDocs(colArticulos);
 
         articulosCache = snap.docs.map(d => ({
             id: d.id,
@@ -269,7 +266,7 @@ async function crearArticulo(data, usuarioEmail) {
         fecha: serverTimestamp()
     };
 
-    const ref = await addDoc(colArticulos, finalData, withAuth());
+    const ref = await addDoc(colArticulos, finalData);
 
     await registrarLog({
         articuloId: ref.id,
@@ -288,7 +285,7 @@ async function actualizarArticulo(id, data, usuarioEmail) {
 
     const ref = doc(db, "articulos", id);
 
-    const snap = await getDoc(ref, withAuth());
+    const snap = await getDoc(ref);
     if (!snap.exists()) {
         alert("El artículo ya no existe.");
         return;
@@ -304,7 +301,7 @@ async function actualizarArticulo(id, data, usuarioEmail) {
         fecha: serverTimestamp()
     };
 
-    await setDoc(ref, finalData, { merge: true }, withAuth());
+    await setDoc(ref, finalData, { merge: true });
 
     await registrarLog({
         articuloId: id,
@@ -324,10 +321,10 @@ async function eliminarArticulo(id) {
     setLoading(true, "Eliminando artículo…");
 
     const ref = doc(db, "articulos", id);
-    const snap = await getDoc(ref, withAuth());
+    const snap = await getDoc(ref);
     const anterior = snap.exists() ? snap.data() : null;
 
-    await deleteDoc(ref, withAuth());
+    await deleteDoc(ref);
 
     await registrarLog({
         articuloId: id,
