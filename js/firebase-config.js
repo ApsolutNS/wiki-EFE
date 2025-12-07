@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getCurrentUser } from "./admin-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBL1qT2tLfFTJ_f_3apv_sxKnn28u0nccs",
@@ -12,3 +13,18 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+/* =====================================================
+   MIDDLEWARE AUTOMÁTICO PARA ENVIAR request.headers.authorization
+====================================================== */
+
+export function withAuth(options = {}) {
+    const user = getCurrentUser();
+    return {
+        ...options,
+        headers: {
+            authorization: user?.uid || null
+        }
+    };
+}
+
+export { db };
