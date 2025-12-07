@@ -1,7 +1,7 @@
 // ======================================================
 // IMPORTS
 // ======================================================
-import { db, withAuth } from "./firebase-config.js";
+import { db } from "./firebase-config.js";
 import { registrarLog } from "./logs.js";
 import { toDateSafe } from "./utils.js";
 import { intentarLogin, getCurrentUser, logout } from "./admin-auth.js";
