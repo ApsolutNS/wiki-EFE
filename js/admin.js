@@ -39,17 +39,26 @@ function ocultarPanel() {
     document.getElementById("loginScreen").style.display = "flex";
 }
 
-async function initLogin() {
-    const btn = document.getElementById("loginBtn");
-    const userInput = document.getElementById("loginUser");
-    const passInput = document.getElementById("loginPass");
-    const errorBox = document.getElementById("loginError");
+// Si ya está logueado → mostrar panel
+const usuario = getCurrentUser();
+if (usuario) mostrarPanel();
 
-    // Sesión previa
-    const saved = getCurrentUser();
-    if (saved) {
-        mostrarPanel();
+document.getElementById("loginBtn").addEventListener("click", async () => {
+    const user = document.getElementById("loginUser").value.trim();
+    const pass = document.getElementById("loginPass").value.trim();
+    const error = document.getElementById("loginError");
+
+    const result = await intentarLogin(user, pass);
+
+    if (!result) {
+        error.style.display = "block";
+        error.textContent = "Credenciales incorrectas.";
+        return;
     }
+
+    error.style.display = "none";
+    mostrarPanel();
+});
 
     async function hacerLogin() {
         const u = userInput.value.trim();
