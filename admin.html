@@ -5,14 +5,10 @@
     <title>Admin FE - Gestión de Artículos</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- ====================== -->
-    <!--     QUILL CSS         -->
-    <!-- ====================== -->
+    <!-- QUILL CSS -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet" />
 
-    <!-- ====================== -->
-    <!--       ESTILOS         -->
-    <!-- ====================== -->
+    <!-- ESTILOS ADMIN -->
     <link rel="stylesheet" href="./css/admin.css" />
 </head>
 
@@ -37,8 +33,9 @@
     </div>
 </div>
 
+
 <!-- ========================================================= -->
-<!--                   PANEL PRINCIPAL ADMIN                   -->
+<!--                      PANEL PRINCIPAL                       -->
 <!-- ========================================================= -->
 <div id="panel" style="display:none;">
     <header>
@@ -49,7 +46,6 @@
             </div>
             <div class="header-sub">Crear, editar, destacar y medir tus artículos.</div>
         </div>
-
         <button id="themeToggle" class="btn-toggle">Modo oscuro</button>
     </header>
 
@@ -71,25 +67,15 @@
 
             <!-- DASHBOARD -->
             <div class="metrics-row">
-                <div class="badge">
-                    <span class="badge-dot"></span> 
-                    <span id="contadorArticulos">0 artículos</span>
-                </div>
-
-                <div class="badge">
-                    <span class="badge-dot"></span> 
-                    <span id="contadorVisibles">0 visibles</span>
-                </div>
-
-                <div class="badge">
-                    <span class="badge-dot"></span> 
-                    <span id="contadorDestacados">0 destacados</span>
-                </div>
+                <div class="badge"><span class="badge-dot"></span> <span id="contadorArticulos">0 artículos</span></div>
+                <div class="badge"><span class="badge-dot"></span> <span id="contadorVisibles">0 visibles</span></div>
+                <div class="badge"><span class="badge-dot"></span> <span id="contadorDestacados">0 destacados</span></div>
             </div>
 
-            <!-- Categorías -->
+            <!-- CATEGORÍAS -->
             <div id="metricsCategorias" class="metrics-categorias"></div>
 
+            <!-- TABLA -->
             <table class="tabla">
                 <thead>
                     <tr>
@@ -104,6 +90,7 @@
                 <tbody id="tablaArticulos"></tbody>
             </table>
         </section>
+
 
         <!-- FORMULARIO -->
         <section class="card">
@@ -142,6 +129,7 @@
     </div>
 </div>
 
+
 <!-- ========================================================= -->
 <!--                           MODAL                            -->
 <!-- ========================================================= -->
@@ -156,8 +144,20 @@
     </div>
 </div>
 
+
 <!-- ========================================================= -->
-<!--                   ORDEN CORRECTO DE SCRIPTS               -->
+<!--                     LOADING OVERLAY                       -->
+<!-- ========================================================= -->
+<div id="loadingOverlay" class="loading-overlay" style="display:none;">
+    <div class="loading-box">
+        <div class="spinner"></div>
+        <span id="loadingText">Procesando…</span>
+    </div>
+</div>
+
+
+<!-- ========================================================= -->
+<!--                ORDEN CORRECTO DE SCRIPTS                  -->
 <!-- ========================================================= -->
 
 <!-- 1) QUILL JS -->
@@ -169,7 +169,7 @@
 <script type="module" src="./js/logs.js"></script>
 <script type="module" src="./js/admin-auth.js"></script>
 
-<!-- 3) ADMIN PRINCIPAL (DEBE SER EL ÚLTIMO) -->
+<!-- 3) ADMIN PRINCIPAL (DEBE SER EL ÚLTIMO SIEMPRE) -->
 <script type="module" src="./js/admin.js"></script>
 
 </body>
