@@ -18,13 +18,3 @@ const app = initializeApp(firebaseConfig);
 
 // Exportación ÚNICA (antes tenías duplicada)
 export const db = getFirestore(app);
-
-// ============================================
-// TOKEN PARA VALIDAR ADMINÍA
-// ============================================
-export function withAuth() {
-    const user = JSON.parse(localStorage.getItem("fe_admin_user") || "null");
-    if (!user) throw new Error("No autenticado");
-
-    return {}; // Hook futuro para reglas servidor
-}
