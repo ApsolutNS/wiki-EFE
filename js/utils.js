@@ -20,3 +20,17 @@ export function debounce(fn, delay = 300) {
         timer = setTimeout(() => fn(...args), delay);
     };
 }
+
+// Generar sessionId único por navegador para rastrear todo lo que un usuario hace en la sesión actual.
+function generateSessionId() {
+    return 'sess-' + crypto.randomUUID();
+}
+
+let sessionId = localStorage.getItem("fe_session_id");
+
+if (!sessionId) {
+    sessionId = generateSessionId();
+    localStorage.setItem("fe_session_id", sessionId);
+}
+
+export { sessionId };
