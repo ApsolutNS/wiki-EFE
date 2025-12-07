@@ -184,6 +184,89 @@ function renderTabla(lista) {
         btn.addEventListener("click", () => eliminarArticulo(btn.dataset.id))
     );
 }
+// ======================================================
+// VER ARTÍCULO (MODAL)
+// ======================================================
+function verArticulo(id) {
+    const art = articulosCache.find(a => a.id === id);
+    if (!art) return alert("Artículo no encontrado");
+
+    document.getElementById("modalTitle").textContent = art.titulo;
+    document.getElementById("modalMeta").textContent =
+        `${art.categoria} • ${toDateSafe(art.fecha).toLocaleString("es-PE")}`;
+
+    document.getElementById("modalContent").innerHTML = art.contenido;
+
+    document.getElementById("modal").style.display = "block";
+
+    document.getElementById("btnCopiar").onclick = async () => {
+        const temp = document.createElement("div");
+        temp.innerHTML = art.contenido;
+        await navigator.clipboard.writeText(temp.innerText);
+        alert("Contenido copiado al portapapeles.");
+    };
+}
+
+
+
+// ======================================================
+// EDITAR ARTÍCULO
+// ======================================================
+async function editarArticulo(id) {
+    const ref = doc(db, "articulos", id);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+        alert("Artículo no encontrado");
+        return;
+    }
+
+    const art = snap.data();
+
+    document.getElementById("articuloId").value = id;
+    document.getElementById("titulo").value = art.titulo;
+    document.getElementById("categoria").value = art.categoria;
+    document.getElementById("resumen").value = art.resumen;
+    document.getElementById("visibleAgentes").value = art.visibleAgentes ? "true" : "false";
+    document.getElementById("destacado").value = art.destacado ? "true" : "false";
+
+    quill.root.innerHTML = art.contenido;
+
+    document.getElementById("formTitle").textContent = "Editar artículo";
+
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+}
+
+
+
+// ======================================================
+// ELIMINAR ARTÍCULO
+// ======================================================
+async function eliminarArticulo(id) {
+    if (!confirm("¿Seguro que deseas eliminar este artículo?")) return;
+
+    setLoading(true, "Eliminando artículo…");
+
+    const ref = doc(db, "articulos", id);
+    const snap = await getDoc(ref);
+
+    const anterior = snap.exists() ? snap.data() : null;
+
+    await deleteDoc(ref);
+
+    await registrarLog({
+        articuloId: id,
+        accion: "delete",
+        antes: anterior,
+        despues: null,
+        usuarioEmail: getCurrentUser()?.username
+    });
+
+    alert("Artículo eliminado correctamente.");
+
+    cargarTabla();
+    setLoading(false);
+}
 
 // ======================================================
 // BUSCADOR
