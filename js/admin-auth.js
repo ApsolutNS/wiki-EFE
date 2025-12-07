@@ -16,6 +16,10 @@ async function sha256(texto) {
    LOGIN AUTÉNTICO FIRESTORE
 ============================ */
 export async function intentarLogin(username, password) {
+
+    // Validación mínima
+    if (!username || !password) return null;
+
     const passwordHash = await sha256(password);
 
     // Consulta Firestore
@@ -23,7 +27,7 @@ export async function intentarLogin(username, password) {
         collection(db, "admin_users"),
         where("username", "==", username),
         where("passwordHash", "==", passwordHash),
-        where("disabled", "==", false) // usuario no desactivado
+        where("disabled", "==", false)
     );
 
     const snap = await getDocs(q);
@@ -36,10 +40,11 @@ export async function intentarLogin(username, password) {
 
     const user = {
         username: userData.username,
-        role: userData.role || "admin"
+        role: userData.role || "admin",
+        uid: snap.docs[0].id    // útil para permisos avanzados
     };
 
-    // guardar sesión
+    // Guardar sesión segura
     localStorage.setItem("fe_admin_user", JSON.stringify(user));
 
     return user;
