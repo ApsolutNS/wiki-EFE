@@ -4,21 +4,21 @@
     <meta charset="UTF-8">
     <title>Admin FE - Gestión de Artículos</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <!-- QUILL CSS -->
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    
-    <!-- QUILL LIBRARY -->
-    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-    
-    <!-- TU JS ADMIN -->
-    <script type="module" src="./admin.js"></script>
-    
-    <!-- TU JS ADMIN-AUTH -->
-    <script type="module" src="./js/admin-auth.js"></script>
 
+    <!-- QUILL CSS -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 
     <!-- ESTILOS -->
     <link rel="stylesheet" href="./css/admin.css">
+
+    <!-- QUILL LIBRARY (DEBE IR ANTES DE ADMIN.JS) -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+    <!-- ADMIN-AUTH (IMPORTANTE: SE CARGA ANTES) -->
+    <script type="module" src="./js/admin-auth.js"></script>
+
+    <!-- ADMIN PRINCIPAL (QUE USA ADMIN-AUTH) -->
+    <script type="module" src="./admin.js"></script>
 </head>
 
 <body>
@@ -34,7 +34,7 @@
 
             <button class="login-btn" id="loginBtn">Ingresar</button>
 
-            <div id="loginError" class="login-error">
+            <div id="loginError" class="login-error" style="display:none;">
                 Credenciales incorrectas.
             </div>
         </div>
@@ -75,4 +75,71 @@
 
                 <div class="metrics-row">
                     <div class="badge"><span class="badge-dot"></span> <span id="contadorArticulos">0 artículos</span></div>
-                    <div class="badge"><span class="badge-dot"></span> <span id="contadorVis
+                    <div class="badge"><span class="badge-dot"></span> <span id="contadorVisibles">0 visibles</span></div>
+                    <div class="badge"><span class="badge-dot"></span> <span id="contadorDestacados">0 destacados</span></div>
+                </div>
+
+                <table class="tabla">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Categoría</th>
+                            <th>Visible</th>
+                            <th>Destacado</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaArticulos"></tbody>
+                </table>
+            </section>
+
+            <!-- FORMULARIO -->
+            <section class="card">
+                <div class="card-title" id="formTitle">Nuevo artículo</div>
+
+                <input type="hidden" id="articuloId">
+
+                <label>Título</label>
+                <input id="titulo" class="input">
+
+                <label>Categoría</label>
+                <input id="categoria" class="input">
+
+                <label>Resumen</label>
+                <textarea id="resumen" class="input"></textarea>
+
+                <label>Contenido completo</label>
+                <div id="editor"></div>
+
+                <label>Visible para agentes</label>
+                <select id="visibleAgentes" class="input">
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                </select>
+
+                <label>Destacado</label>
+                <select id="destacado" class="input">
+                    <option value="false">No</option>
+                    <option value="true">Sí ⭐</option>
+                </select>
+
+                <button class="btn primary" id="btnGuardar">💾 Guardar</button>
+                <button class="btn" id="btnLimpiar">Limpiar</button>
+            </section>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle"></h2>
+            <div id="modalMeta"></div>
+            <div id="modalContent"></div>
+            <button id="btnCopiar" class="btn">📋 Copiar contenido</button>
+            <button id="btnCerrarModal" class="btn danger">Cerrar</button>
+        </div>
+    </div>
+
+</body>
+</html>
