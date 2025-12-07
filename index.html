@@ -1,143 +1,193 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Navegador FE – Base de Conocimiento</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navegador FE – Base de Conocimiento</title>
 
-<!-- CSP SEGURA -->
-<meta http-equiv="Content-Security-Policy" content="
-  default-src 'self';
-  script-src 'self' https://www.gstatic.com https://cdn.jsdelivr.net;
-  style-src 'self' 'unsafe-inline';
-  img-src 'self' data: https:;
-  font-src 'self' https:;
-  connect-src 'self' https://firestore.googleapis.com https://firebase.googleapis.com;
-  frame-ancestors 'none';
-  object-src 'none';
-  base-uri 'self';
-">
+    <!-- CSP TEMPORAL (ACTUALIZADA PARA GSAP + INLINE SUAVE) -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self' https:;
+      connect-src 'self' https://firestore.googleapis.com https://firebase.googleapis.com;
+      frame-ancestors 'none';
+      object-src 'none';
+      base-uri 'self';
+      upgrade-insecure-requests;
+    ">
 
-<!-- ESTILOS -->
-<link rel="stylesheet" href="css/styles.css">
+    <!-- ESTILOS PRINCIPALES -->
+    <link rel="stylesheet" href="css/styles.css">
 
-<!-- DOMPurify -->
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.0/dist/purify.min.js"></script>
+    <!-- DOMPurify (sanitiza HTML de artículos) -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.0/dist/purify.min.js"></script>
 
+    <!-- GSAP CDN (ANIMACIONES ESTILO iOS) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
 </head>
 <body>
 
-<!-- ========================================================= -->
-<!--                       HEADER ESTILO MACOS                 -->
-<!-- ========================================================= -->
-<header>
-    <div class="brand">
-        <div class="brand-icon">FE</div>
-        <div>
-            <div class="brand-text-title">Navegador FE</div>
-            <div class="brand-text-sub">Base de conocimiento para agentes y backoffice</div>
+    <!-- HEADER -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon">FE</div>
+            <div>
+                <div class="brand-text-title">Navegador FE</div>
+                <div class="brand-text-sub">Base de conocimiento para agentes y backoffice</div>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button id="btnAdmin" class="btn btn-outline">
+                <span class="btn-icon">🛠️</span>
+                Panel Admin
+            </button>
+            <button id="themeToggle" class="btn">
+                Modo oscuro
+            </button>
+        </div>
+    </header>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="container">
+
+        <!-- PANEL BUSCADOR -->
+        <section class="search-section">
+            <div class="search-label">
+                Busca por palabra clave, norma, flujo, producto o frase de speech
+            </div>
+
+            <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input id="searchBar" placeholder="Ej: SBS plazo refinanciamiento, speech objeciones…" />
+                <span class="search-kbd">Enter</span>
+            </div>
+
+            <div class="controls-row">
+                <div class="controls-left">
+                    <div>
+                        <div class="field-label">Categoría</div>
+                        <select id="categoriaSelect">
+                            <option value="todas">Todas</option>
+                            <option value="Norma Regulatoria">Norma Regulatoria</option>
+                            <option value="Monitoreo de Calidad">Monitoreo de Calidad</option>
+                            <option value="Speech">Speech</option>
+                            <option value="Flujos">Flujos</option>
+                            <option value="Productos">Productos</option>
+                            <option value="General">General</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="controls-right">
+                    <div>
+                        <div class="field-label">Ordenar por</div>
+                        <select id="sortSelect">
+                            <option value="recientes">Más recientes</option>
+                            <option value="vistas">Más vistos</option>
+                            <option value="destacados">Destacados</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HISTORIAL DE BÚSQUEDA -->
+            <div class="history-box" id="historyBox">
+                <!-- index.js inyecta chips aquí -->
+            </div>
+
+            <!-- INFO RESULTADOS -->
+            <div class="info-bar">
+                <div id="infoResultados">Mostrando 0 resultados.</div>
+                <div id="infoOrden"></div>
+            </div>
+        </section>
+
+        <!-- RECOMENDADOS -->
+        <div class="section-title">⭐ Recomendados para hoy</div>
+        <div id="topResults" class="results"></div>
+
+        <!-- TODOS LOS ARTÍCULOS -->
+        <div class="section-title">📄 Todos los artículos</div>
+        <div id="results" class="results"></div>
+
+        <!-- PAGINACIÓN -->
+        <div id="pagination" class="pagination"></div>
+
+    </div>
+
+    <!-- MODAL DE ARTÍCULO -->
+    <div id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalTitle"></h2>
+                    <p id="modalCategory"></p>
+                </div>
+                <button id="closeModal">Cerrar</button>
+            </div>
+            <div id="modalContent"></div>
         </div>
     </div>
 
-    <div class="header-actions">
-        <button id="btnAdmin" class="btn btn-outline">Panel Admin</button>
-        <button id="themeToggle" class="btn">Modo oscuro</button>
-    </div>
-</header>
+    <!-- SCRIPTS DEL SISTEMA -->
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/index.js"></script>
 
-<!-- ========================================================= -->
-<!--                       CONTENIDO                            -->
-<!-- ========================================================= -->
-<div class="container">
+    <!-- ANIMACIONES GSAP BÁSICAS (USANDO LAS CLASES EXISTENTES) -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        if (window.gsap) {
+          // Header entrada suave
+          gsap.from("header", {
+            y: -40,
+            opacity: 0,
+            duration: 0.6,
+            ease: "power2.out"
+          });
 
-    <!-- ======================= BUSCADOR ======================= -->
-    <section class="search-section">
+          // Panel buscador
+          gsap.from(".search-section", {
+            y: 20,
+            opacity: 0,
+            delay: 0.15,
+            duration: 0.6,
+            ease: "power2.out"
+          });
 
-        <div class="search-label">Busca por palabra clave, norma, flujo, speech o frase exacta</div>
+          // Secciones de resultados (van saliendo con un ligero stagger)
+          gsap.from(".section-title", {
+            y: 8,
+            opacity: 0,
+            delay: 0.25,
+            duration: 0.5,
+            stagger: 0.1,
+            ease: "power2.out"
+          });
 
-        <div class="search-wrapper">
-            <span class="search-icon">
-                <span class="fe-icon search"></span>
-            </span>
+          // Cuando index.js agregue .card, puedes aplicar animaciones con MutationObserver
+          const resultsContainers = [document.getElementById("topResults"), document.getElementById("results")];
+          const observer = new MutationObserver(() => {
+            const cards = document.querySelectorAll(".card");
+            gsap.from(cards, {
+              opacity: 0,
+              y: 10,
+              duration: 0.35,
+              ease: "power2.out",
+              stagger: 0.03,
+            });
+          });
 
-            <input id="searchBar" placeholder="Ej: SBP refinanciamiento, speech objeciones…" />
-            <span class="search-kbd">Enter</span>
-        </div>
-
-        <!-- FILTROS -->
-        <div class="controls-row">
-
-            <div>
-                <div class="field-label">Categoría</div>
-                <select id="categoriaSelect">
-                    <option value="todas">Todas</option>
-                    <option value="Norma Regulatoria">Norma Regulatoria</option>
-                    <option value="Monitoreo de Calidad">Monitoreo de Calidad</option>
-                    <option value="Speech">Speech</option>
-                    <option value="Flujos">Flujos</option>
-                    <option value="Productos">Productos</option>
-                    <option value="General">General</option>
-                </select>
-            </div>
-
-            <div>
-                <div class="field-label">Ordenar por</div>
-                <select id="sortSelect">
-                    <option value="recientes">Más recientes</option>
-                    <option value="vistas">Más vistos</option>
-                    <option value="destacados">Destacados</option>
-                </select>
-            </div>
-
-        </div>
-
-        <!-- HISTORIAL -->
-        <div id="historyBox" class="history-box"></div>
-
-        <!-- INFO -->
-        <div class="info-bar">
-            <div id="infoResultados">Mostrando 0 resultados.</div>
-            <div id="infoOrden"></div>
-        </div>
-    </section>
-
-    <!-- ================= RECOMENDADOS ================= -->
-    <div class="section-title">⭐ Recomendados para hoy</div>
-    <div id="topResults" class="results"></div>
-
-    <!-- ================= TODA LA LISTA ================= -->
-    <div class="section-title">📄 Todos los artículos</div>
-    <div id="results" class="results"></div>
-
-    <div id="pagination" class="pagination"></div>
-
-</div>
-
-<!-- ========================================================= -->
-<!--                        MODAL                               -->
-<!-- ========================================================= -->
-<div id="modal">
-    <div class="modal-content">
-
-        <div class="modal-header">
-            <div>
-                <h2 id="modalTitle"></h2>
-                <p id="modalCategory"></p>
-            </div>
-            <button id="closeModal">Cerrar</button>
-        </div>
-
-        <div id="modalContent"></div>
-
-    </div>
-</div>
-
-<!-- ========================================================= -->
-<!--                    SCRIPTS DEL PROYECTO                    -->
-<!-- ========================================================= -->
-<script type="module" src="js/firebase-config.js"></script>
-<script type="module" src="js/utils.js"></script>
-<script type="module" src="js/index.js"></script>
+          resultsContainers.forEach(c => {
+            if (c) observer.observe(c, { childList: true });
+          });
+        }
+      });
+    </script>
 
 </body>
 </html>
