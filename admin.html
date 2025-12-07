@@ -11,14 +11,17 @@
     <!-- ESTILOS -->
     <link rel="stylesheet" href="./css/admin.css">
 
-    <!-- QUILL LIBRARY (DEBE IR ANTES DE ADMIN.JS) -->
+    <!-- QUILL LIBRARY (Carga necesaria antes de admin.js) -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
-    <!-- ADMIN-AUTH (IMPORTANTE: SE CARGA ANTES) -->
+    <!-- FIREBASE CONFIG (DEBE IR ANTES DE ADMIN-AUTH Y ADMIN.JS) -->
+    <script type="module" src="./js/firebase-config.js"></script>
+
+    <!-- AUTH -->
     <script type="module" src="./js/admin-auth.js"></script>
 
-    <!-- ADMIN PRINCIPAL (QUE USA ADMIN-AUTH) -->
-    <script type="module" src="./admin.js"></script>
+    <!-- ADMIN PRINCIPAL -->
+    <script type="module" src="./js/admin.js"></script>
 </head>
 
 <body>
