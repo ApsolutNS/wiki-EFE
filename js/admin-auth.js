@@ -1,11 +1,9 @@
 import { db } from "./firebase-config.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-let CURRENT_USER = null;
-
-/* ======================
+/* ============================
    HASH SHA-256
-====================== */
+============================ */
 async function sha256(texto) {
     const data = new TextEncoder().encode(texto);
     const hash = await crypto.subtle.digest("SHA-256", data);
@@ -14,54 +12,51 @@ async function sha256(texto) {
         .join("");
 }
 
-/* ======================
-   LOGIN CONTRA firestore
-====================== */
+/* ============================
+   LOGIN AUTÉNTICO FIRESTORE
+============================ */
 export async function intentarLogin(username, password) {
+    const passwordHash = await sha256(password);
 
-    const hash = await sha256(password);
-    const snap = await getDocs(collection(db, "admin_users"));
+    // Consulta Firestore
+    const q = query(
+        collection(db, "admin_users"),
+        where("username", "==", username),
+        where("passwordHash", "==", passwordHash),
+        where("disabled", "!=", true) // usuario no desactivado
+    );
 
-    let userMatch = null;
+    const snap = await getDocs(q);
 
-    snap.forEach(doc => {
-        const data = doc.data();
-        if (data.username === username && data.passwordHash === hash) {
-            userMatch = {
-                username: data.username,
-                role: data.role || "admin",
-            };
-        }
-    });
-
-    if (userMatch) {
-        CURRENT_USER = userMatch;
-        localStorage.setItem("fe_admin_user", JSON.stringify(userMatch));
-        return userMatch;
+    if (snap.empty) {
+        return null; // credenciales incorrectas
     }
 
-    return null;
+    const userData = snap.docs[0].data();
+
+    const user = {
+        username: userData.username,
+        role: userData.role || "admin"
+    };
+
+    // guardar sesión
+    localStorage.setItem("fe_admin_user", JSON.stringify(user));
+
+    return user;
 }
 
-/* ======================
-   Obtener usuario actual
-====================== */
+/* ============================
+   OBTENER USUARIO AUTENTICADO
+============================ */
 export function getCurrentUser() {
-    if (CURRENT_USER) return CURRENT_USER;
-
     const saved = localStorage.getItem("fe_admin_user");
-    if (saved) {
-        CURRENT_USER = JSON.parse(saved);
-        return CURRENT_USER;
-    }
-
-    return null;
+    if (!saved) return null;
+    return JSON.parse(saved);
 }
 
-/* ======================
-   Logout
-====================== */
+/* ============================
+   LOGOUT
+============================ */
 export function logout() {
-    CURRENT_USER = null;
     localStorage.removeItem("fe_admin_user");
 }
