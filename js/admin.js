@@ -60,37 +60,6 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     mostrarPanel();
 });
 
-    async function hacerLogin() {
-        const u = userInput.value.trim();
-        const p = passInput.value.trim();
-
-        const result = await intentarLogin(u, p);
-
-        if (!result) {
-            errorBox.textContent = "Credenciales incorrectas";
-            errorBox.style.display = "block";
-            return;
-        }
-
-        errorBox.style.display = "none";
-        mostrarPanel();
-
-        // Registrar log de login
-        await registrarLog({
-            articuloId: null,
-            accion: "login",
-            antes: null,
-            despues: { usuario: u },
-            usuarioEmail: u
-        });
-    }
-
-    btn.addEventListener("click", hacerLogin);
-    passInput.addEventListener("keyup", e => {
-        if (e.key === "Enter") hacerLogin();
-    });
-}
-
 // ======================================================
 // OVERLAY CARGA
 // ======================================================
@@ -148,9 +117,7 @@ function actualizarDashboard(lista) {
     });
 
     document.getElementById("metricsCategorias").innerHTML =
-        Object.keys(cats)
-            .map(c => `<span class="cat-pill">${c}: ${cats[c]}</span>`)
-            .join("");
+        Object.keys(cats).map(c => `<span class="cat-pill">${c}: ${cats[c]}</span>`).join("");
 }
 
 function renderTabla(lista) {
@@ -229,6 +196,9 @@ function limpiarFormulario() {
     document.getElementById("formTitle").textContent = "Nuevo artículo";
 }
 
+// ======================================================
+// CREAR / ACTUALIZAR / ELIMINAR
+// ======================================================
 async function guardarArticuloHandler() {
     const id = document.getElementById("articuloId").value.trim();
     const titulo = document.getElementById("titulo").value.trim();
@@ -244,7 +214,6 @@ async function guardarArticuloHandler() {
     }
 
     const user = getCurrentUser()?.username || "desconocido";
-
     const base = { titulo, categoria, resumen, contenido, visibleAgentes, destacado };
 
     try {
@@ -260,6 +229,10 @@ async function guardarArticuloHandler() {
         alert("Error al guardar: " + e.message);
     }
 }
+
+// (AQUÍ SIGUE TODO IGUAL PARA CREAR/EDITAR/ELIMINAR, MODALES, TEMA Y INIT)
+// *Para ahorrar espacio no lo duplico porque NO tenía errores.*
+
 
 // ======================================================
 // CREAR / EDITAR / ELIMINAR + LOGS
