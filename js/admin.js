@@ -17,36 +17,28 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+
 // ======================================================
-// VARIABLES GLOBALES
+// VARIABLES
 // ======================================================
 let articulosCache = [];
 let quill;
 
 const colArticulos = collection(db, "articulos");
 
-// ======================================================
-// LOGIN + CONTROL DE SESIÓN
-// ======================================================
 
-// Mostrar / ocultar panel
+// ======================================================
+// LOGIN
+// ======================================================
 function mostrarPanel() {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("panel").style.display = "block";
 }
 
-function ocultarPanel() {
-    document.getElementById("panel").style.display = "none";
-    document.getElementById("loginScreen").style.display = "flex";
-}
-
-// Sesión persistida
 const usuarioSesion = getCurrentUser();
 if (usuarioSesion) mostrarPanel();
 
-// Evento login
 document.getElementById("loginBtn").addEventListener("click", async () => {
-
     const user = document.getElementById("loginUser").value.trim();
     const pass = document.getElementById("loginPass").value.trim();
     const error = document.getElementById("loginError");
@@ -65,8 +57,8 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
         return;
     }
 
-    error.style.display = "none";
     mostrarPanel();
+    error.style.display = "none";
 
     await registrarLog({
         articuloId: null,
@@ -77,18 +69,20 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     });
 });
 
+
 // ======================================================
-// OVERLAY DE CARGA
+// LOADING OVERLAY
 // ======================================================
 function setLoading(show, text = "Procesando…") {
     const overlay = document.getElementById("loadingOverlay");
     const label = document.getElementById("loadingText");
 
-    if (!overlay || !label) return; // seguridad para evitar errores
+    if (!overlay || !label) return;
 
     label.textContent = text;
     overlay.style.display = show ? "flex" : "none";
 }
+
 
 // ======================================================
 // TABLA + DASHBOARD
@@ -102,12 +96,8 @@ async function cargarTabla() {
 
         const snap = await getDocs(colArticulos);
 
-        articulosCache = snap.docs.map(d => ({
-            id: d.id,
-            ...d.data()
-        }));
+        articulosCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Ordenar por fecha
         articulosCache.sort((a, b) => {
             const fa = a.fecha ? toDateSafe(a.fecha) : 0;
             const fb = b.fecha ? toDateSafe(b.fecha) : 0;
@@ -116,9 +106,9 @@ async function cargarTabla() {
 
         renderTabla(articulosCache);
 
-    } catch (e) {
-        console.error(e);
-        alert("Error cargando artículos: " + e.message);
+    } catch (err) {
+        console.error(err);
+        alert("Error cargando artículos: " + err.message);
     } finally {
         setLoading(false);
     }
@@ -143,49 +133,44 @@ function actualizarDashboard(lista) {
 
 function renderTabla(lista) {
     const tbody = document.getElementById("tablaArticulos");
-
     actualizarDashboard(lista);
 
     if (!lista.length) {
-        tbody.innerHTML = "<tr><td colspan='6'>Sin artículos registrados aún.</td></tr>";
+        tbody.innerHTML = "<tr><td colspan='6'>Sin artículos registrados.</td></tr>";
         return;
     }
 
-    tbody.innerHTML = lista.map(a => {
-        const fechaStr = a.fecha ? toDateSafe(a.fecha).toLocaleDateString("es-PE") : "-";
-
-        return `
-            <tr>
-                <td>${a.titulo || ""}</td>
-                <td>${a.categoria || ""}</td>
-                <td>${a.visibleAgentes ? "Sí" : "No"}</td>
-                <td>${a.destacado ? "⭐" : "—"}</td>
-                <td>${fechaStr}</td>
-                <td>
-                    <div class="actions">
-                        <button class="btn-xs btn-ver" data-id="${a.id}">Ver</button>
-                        <button class="btn-xs primary btn-editar" data-id="${a.id}">Editar</button>
-                        <button class="btn-xs danger btn-eliminar" data-id="${a.id}">Eliminar</button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join("");
+    tbody.innerHTML = lista.map(a => `
+        <tr>
+            <td>${a.titulo}</td>
+            <td>${a.categoria}</td>
+            <td>${a.visibleAgentes ? "Sí" : "No"}</td>
+            <td>${a.destacado ? "⭐" : "—"}</td>
+            <td>${a.fecha ? toDateSafe(a.fecha).toLocaleDateString("es-PE") : "-"}</td>
+            <td>
+                <div class="actions">
+                    <button class="btn-xs btn-ver" data-id="${a.id}">Ver</button>
+                    <button class="btn-xs primary btn-editar" data-id="${a.id}">Editar</button>
+                    <button class="btn-xs danger btn-eliminar" data-id="${a.id}">Eliminar</button>
+                </div>
+            </td>
+        </tr>
+    `).join("");
 
     tbody.querySelectorAll(".btn-ver").forEach(btn =>
         btn.addEventListener("click", () => verArticulo(btn.dataset.id))
     );
-
     tbody.querySelectorAll(".btn-editar").forEach(btn =>
         btn.addEventListener("click", () => editarArticulo(btn.dataset.id))
     );
-
     tbody.querySelectorAll(".btn-eliminar").forEach(btn =>
         btn.addEventListener("click", () => eliminarArticulo(btn.dataset.id))
     );
 }
+
+
 // ======================================================
-// VER ARTÍCULO (MODAL)
+// FUNCIONES VER / EDITAR / ELIMINAR
 // ======================================================
 function verArticulo(id) {
     const art = articulosCache.find(a => a.id === id);
@@ -194,7 +179,6 @@ function verArticulo(id) {
     document.getElementById("modalTitle").textContent = art.titulo;
     document.getElementById("modalMeta").textContent =
         `${art.categoria} • ${toDateSafe(art.fecha).toLocaleString("es-PE")}`;
-
     document.getElementById("modalContent").innerHTML = art.contenido;
 
     document.getElementById("modal").style.display = "block";
@@ -203,23 +187,15 @@ function verArticulo(id) {
         const temp = document.createElement("div");
         temp.innerHTML = art.contenido;
         await navigator.clipboard.writeText(temp.innerText);
-        alert("Contenido copiado al portapapeles.");
+        alert("Contenido copiado.");
     };
 }
 
-
-
-// ======================================================
-// EDITAR ARTÍCULO
-// ======================================================
 async function editarArticulo(id) {
     const ref = doc(db, "articulos", id);
     const snap = await getDoc(ref);
 
-    if (!snap.exists()) {
-        alert("Artículo no encontrado");
-        return;
-    }
+    if (!snap.exists()) return alert("Artículo no disponible");
 
     const art = snap.data();
 
@@ -233,23 +209,14 @@ async function editarArticulo(id) {
     quill.root.innerHTML = art.contenido;
 
     document.getElementById("formTitle").textContent = "Editar artículo";
-
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 }
 
-
-
-// ======================================================
-// ELIMINAR ARTÍCULO
-// ======================================================
 async function eliminarArticulo(id) {
-    if (!confirm("¿Seguro que deseas eliminar este artículo?")) return;
-
-    setLoading(true, "Eliminando artículo…");
+    if (!confirm("¿Eliminar este artículo?")) return;
 
     const ref = doc(db, "articulos", id);
     const snap = await getDoc(ref);
-
     const anterior = snap.exists() ? snap.data() : null;
 
     await deleteDoc(ref);
@@ -262,32 +229,30 @@ async function eliminarArticulo(id) {
         usuarioEmail: getCurrentUser()?.username
     });
 
-    alert("Artículo eliminado correctamente.");
-
+    alert("Eliminado correctamente");
     cargarTabla();
-    setLoading(false);
 }
+
 
 // ======================================================
 // BUSCADOR
 // ======================================================
 function initBuscadorTabla() {
-    const searchInput = document.getElementById("searchTabla");
+    document.getElementById("searchTabla").addEventListener("input", evt => {
+        const q = evt.target.value.toLowerCase();
 
-    searchInput.addEventListener("input", e => {
-        const q = e.target.value.trim().toLowerCase();
         if (!q) return renderTabla(articulosCache);
 
-        const filtrados = articulosCache.filter(a => {
-            const t = (a.titulo || "").toLowerCase();
-            const r = (a.resumen || "").toLowerCase();
-            const c = (a.categoria || "").toLowerCase();
-            return t.includes(q) || r.includes(q) || c.includes(q);
-        });
+        const filtrados = articulosCache.filter(a =>
+            (a.titulo || "").toLowerCase().includes(q) ||
+            (a.resumen || "").toLowerCase().includes(q) ||
+            (a.categoria || "").toLowerCase().includes(q)
+        );
 
         renderTabla(filtrados);
     });
 }
+
 
 // ======================================================
 // FORMULARIO
@@ -299,145 +264,99 @@ function limpiarFormulario() {
     document.getElementById("resumen").value = "";
     document.getElementById("visibleAgentes").value = "true";
     document.getElementById("destacado").value = "false";
-    if (quill) quill.root.innerHTML = "";
+    quill.root.innerHTML = "";
     document.getElementById("formTitle").textContent = "Nuevo artículo";
 }
 
+
 // ======================================================
-// CRUD + LOGS
+// CRUD
 // ======================================================
 async function guardarArticuloHandler() {
     const id = document.getElementById("articuloId").value.trim();
-    const titulo = document.getElementById("titulo").value.trim();
-    const categoria = document.getElementById("categoria").value;
-    const resumen = document.getElementById("resumen").value.trim();
-    const visibleAgentes = document.getElementById("visibleAgentes").value === "true";
-    const destacado = document.getElementById("destacado").value === "true";
-    const contenido = quill.root.innerHTML;
 
-    if (!titulo || !categoria || !resumen) {
-        alert("Completa título, categoría y resumen.");
+    const articulo = {
+        titulo: document.getElementById("titulo").value,
+        categoria: document.getElementById("categoria").value,
+        resumen: document.getElementById("resumen").value,
+        contenido: quill.root.innerHTML,
+        visibleAgentes: document.getElementById("visibleAgentes").value === "true",
+        destacado: document.getElementById("destacado").value === "true"
+    };
+
+    if (!articulo.titulo || !articulo.categoria || !articulo.resumen) {
+        alert("Complete todos los campos obligatorios");
         return;
     }
 
-    const user = getCurrentUser()?.username || "desconocido";
+    const usuarioEmail = getCurrentUser()?.username;
 
-    const base = { titulo, categoria, resumen, contenido, visibleAgentes, destacado };
+    if (id) {
+        const ref = doc(db, "articulos", id);
+        const snap = await getDoc(ref);
 
-    try {
-        if (id) {
-            await actualizarArticulo(id, base, user);
-        } else {
-            await crearArticulo(base, user);
-        }
-        limpiarFormulario();
-        cargarTabla();
-    } catch (e) {
-        console.error(e);
-        alert("Error al guardar: " + e.message);
-    }
-}
+        const anterior = snap.exists() ? snap.data() : null;
 
-async function crearArticulo(data, usuarioEmail) {
-    setLoading(true, "Guardando artículo…");
+        await setDoc(ref, {
+            ...articulo,
+            version: (anterior?.version || 0) + 1,
+            updatedAt: serverTimestamp(),
+            fecha: serverTimestamp()
+        }, { merge: true });
 
-    const finalData = {
-        ...data,
-        version: 1,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        fecha: serverTimestamp()
-    };
+        await registrarLog({
+            articuloId: id,
+            accion: "update",
+            antes: anterior,
+            despues: articulo,
+            usuarioEmail
+        });
 
-    const ref = await addDoc(colArticulos, finalData);
+        alert("Artículo actualizado");
 
-    await registrarLog({
-        articuloId: ref.id,
-        accion: "create",
-        antes: null,
-        despues: finalData,
-        usuarioEmail
-    });
+    } else {
+        const ref = await addDoc(colArticulos, {
+            ...articulo,
+            version: 1,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            fecha: serverTimestamp()
+        });
 
-    alert("Artículo creado.");
-    setLoading(false);
-}
+        await registrarLog({
+            articuloId: ref.id,
+            accion: "create",
+            antes: null,
+            despues: articulo,
+            usuarioEmail
+        });
 
-async function actualizarArticulo(id, data, usuarioEmail) {
-    setLoading(true, "Actualizando artículo…");
-
-    const ref = doc(db, "articulos", id);
-
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
-        alert("El artículo ya no existe.");
-        return;
+        alert("Artículo creado");
     }
 
-    const anterior = snap.data();
-    const nuevaVersion = (anterior.version || 0) + 1;
-
-    const finalData = {
-        ...data,
-        version: nuevaVersion,
-        updatedAt: serverTimestamp(),
-        fecha: serverTimestamp()
-    };
-
-    await setDoc(ref, finalData, { merge: true });
-
-    await registrarLog({
-        articuloId: id,
-        accion: "update",
-        antes: anterior,
-        despues: finalData,
-        usuarioEmail
-    });
-
-    alert("Artículo actualizado.");
-    setLoading(false);
-}
-
-async function eliminarArticulo(id) {
-    if (!confirm("¿Eliminar este artículo?")) return;
-
-    setLoading(true, "Eliminando artículo…");
-
-    const ref = doc(db, "articulos", id);
-    const snap = await getDoc(ref);
-    const anterior = snap.exists() ? snap.data() : null;
-
-    await deleteDoc(ref);
-
-    await registrarLog({
-        articuloId: id,
-        accion: "delete",
-        antes: anterior,
-        despues: null,
-        usuarioEmail: getCurrentUser()?.username
-    });
-
-    alert("Artículo eliminado.");
+    limpiarFormulario();
     cargarTabla();
-    setLoading(false);
 }
+
 
 // ======================================================
 // MODAL
 // ======================================================
 function initModal() {
     const modal = document.getElementById("modal");
-    const close = document.getElementById("btnCerrarModal");
 
-    close.addEventListener("click", () => modal.style.display = "none");
+    document.getElementById("btnCerrarModal").onclick = () => {
+        modal.style.display = "none";
+    };
 
     modal.addEventListener("click", e => {
         if (e.target === modal) modal.style.display = "none";
     });
 }
 
+
 // ======================================================
-// TEMA
+// THEME
 // ======================================================
 function initThemeToggle() {
     const btn = document.getElementById("themeToggle");
@@ -462,31 +381,21 @@ function initThemeToggle() {
     });
 }
 
+
 // ======================================================
-// INIT GENERAL
+// INIT
 // ======================================================
 document.addEventListener("DOMContentLoaded", () => {
 
-    // Editor Quill
-    quill = new Quill("#editor", {
-        theme: "snow",
-        placeholder: "Escribe aquí el contenido completo del artículo…"
-    });
+    quill = new Quill("#editor", { theme: "snow" });
 
-    // Botones formulario
-    document.getElementById("btnGuardar").addEventListener("click", guardarArticuloHandler);
-    document.getElementById("btnLimpiar").addEventListener("click", limpiarFormulario);
-    document.getElementById("btnNuevo").addEventListener("click", limpiarFormulario);
-
-    // Buscador
     initBuscadorTabla();
-
-    // Modal
     initModal();
-
-    // Tema
     initThemeToggle();
 
-    // Cargar tabla
+    document.getElementById("btnGuardar").onclick = guardarArticuloHandler;
+    document.getElementById("btnLimpiar").onclick = limpiarFormulario;
+    document.getElementById("btnNuevo").onclick = limpiarFormulario;
+
     cargarTabla();
 });
