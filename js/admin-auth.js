@@ -1,5 +1,5 @@
 import { db } from "./firebase-config.js";
-import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 /* ============================
    HASH SHA-256
@@ -16,13 +16,8 @@ async function sha256(texto) {
    LOGIN AUTÉNTICO FIRESTORE
 ============================ */
 export async function intentarLogin(username, password) {
-
-    // Validación mínima
-    if (!username || !password) return null;
-
     const passwordHash = await sha256(password);
 
-    // Consulta Firestore
     const q = query(
         collection(db, "admin_users"),
         where("username", "==", username),
@@ -32,36 +27,30 @@ export async function intentarLogin(username, password) {
 
     const snap = await getDocs(q);
 
-    if (snap.empty) {
-        return null; // credenciales incorrectas
-    }
+    if (snap.empty) return null;
 
     const userData = snap.docs[0].data();
+    const uid = snap.docs[0].id;
 
     const user = {
         username: userData.username,
         role: userData.role || "admin",
-        uid: snap.docs[0].id    // útil para permisos avanzados
+        uid // ← TOKEN DE AUTORIZACIÓN
     };
 
-    // Guardar sesión segura
     localStorage.setItem("fe_admin_user", JSON.stringify(user));
 
     return user;
 }
 
-/* ============================
-   OBTENER USUARIO AUTENTICADO
-============================ */
+/* Obtener usuario autenticado */
 export function getCurrentUser() {
     const saved = localStorage.getItem("fe_admin_user");
     if (!saved) return null;
     return JSON.parse(saved);
 }
 
-/* ============================
-   LOGOUT
-============================ */
+/* LOGOUT */
 export function logout() {
     localStorage.removeItem("fe_admin_user");
 }
