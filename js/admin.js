@@ -83,9 +83,14 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 function setLoading(show, text = "Procesando…") {
     const overlay = document.getElementById("loadingOverlay");
     const label = document.getElementById("loadingText");
+
+    // Si no existe el overlay en el HTML, simplemente no hacemos nada
+    if (!overlay || !label) return;
+
     label.textContent = text;
     overlay.style.display = show ? "flex" : "none";
 }
+
 
 // ======================================================
 // TABLA + DASHBOARD
