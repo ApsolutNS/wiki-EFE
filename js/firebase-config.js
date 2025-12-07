@@ -1,6 +1,8 @@
+// ============================================
+// FIREBASE CONFIG
+// ============================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getCurrentUser } from "./admin-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBL1qT2tLfFTJ_f_3apv_sxKnn28u0nccs",
@@ -11,20 +13,18 @@ const firebaseConfig = {
     appId: "1:508397908196:web:31d28a73ef56160963fcf1"
 };
 
-export const app = initializeApp(firebaseConfig);
+// Inicializar app SOLO UNA VEZ
+const app = initializeApp(firebaseConfig);
+
+// Exportación ÚNICA (antes tenías duplicada)
 export const db = getFirestore(app);
-/* =====================================================
-   MIDDLEWARE AUTOMÁTICO PARA ENVIAR request.headers.authorization
-====================================================== */
 
-export function withAuth(options = {}) {
-    const user = getCurrentUser();
-    return {
-        ...options,
-        headers: {
-            authorization: user?.uid || null
-        }
-    };
+// ============================================
+// TOKEN PARA VALIDAR ADMINÍA
+// ============================================
+export function withAuth() {
+    const user = JSON.parse(localStorage.getItem("fe_admin_user") || "null");
+    if (!user) throw new Error("No autenticado");
+
+    return {}; // Hook futuro para reglas servidor
 }
-
-export { db };
