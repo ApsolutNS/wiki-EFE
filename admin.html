@@ -8,169 +8,286 @@
     <!-- QUILL CSS -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet" />
 
-    <!-- ESTILOS ADMIN -->
+    <!-- ESTILOS DEL PANEL ADMIN -->
     <link rel="stylesheet" href="./css/admin.css" />
 </head>
 
 <body>
 
-<!-- ========================================================= -->
-<!--                       LOGIN SCREEN                        -->
-<!-- ========================================================= -->
-<div id="loginScreen">
-    <div class="login-card">
-        <div class="login-title">🔐 Acceso Administrativo</div>
-        <div class="login-sub">Ingrese sus credenciales para continuar</div>
+    <!-- ========================================================= -->
+    <!--                       LOGIN SCREEN                        -->
+    <!-- ========================================================= -->
+    <div id="loginScreen">
+        <div class="login-card">
+            <div class="login-logo-circle">FE</div>
+            <div class="login-title">Acceso administrativo</div>
+            <div class="login-sub">Inicia sesión para gestionar la base de conocimiento.</div>
 
-        <input class="login-input" id="loginUser" placeholder="Usuario" />
-        <input class="login-input" id="loginPass" type="password" placeholder="Contraseña" />
+            <input class="login-input" id="loginUser" placeholder="Usuario" />
+            <input class="login-input" id="loginPass" type="password" placeholder="Contraseña" />
 
-        <button class="login-btn" id="loginBtn">Ingresar</button>
+            <button class="login-btn" id="loginBtn">Iniciar sesión</button>
 
-        <div id="loginError" class="login-error" style="display:none;">
-            Credenciales incorrectas.
+            <div id="loginError" class="login-error" style="display:none;">
+                Credenciales incorrectas o usuario deshabilitado.
+            </div>
+
+            <div class="login-hint">
+                Acceso exclusivo para administradores de Financiera Efectiva.
+            </div>
         </div>
     </div>
-</div>
 
+    <!-- ========================================================= -->
+    <!--                   LAYOUT PRINCIPAL ADMIN                  -->
+    <!-- ========================================================= -->
+    <div id="panel" style="display:none;">
+        <div class="shell">
 
-<!-- ========================================================= -->
-<!--                      PANEL PRINCIPAL                       -->
-<!-- ========================================================= -->
-<div id="panel" style="display:none;">
-    <header>
-        <div>
-            <div class="header-title">
-                🛠️ Admin FE – Base de Conocimiento
-                <span class="pill">Panel interno</span>
-            </div>
-            <div class="header-sub">Crear, editar, destacar y medir tus artículos.</div>
-        </div>
-        <button id="themeToggle" class="btn-toggle">Modo oscuro</button>
-    </header>
-
-    <div class="container">
-
-        <!-- LISTADO -->
-        <section class="card">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">Artículos registrados</div>
-                    <div class="card-sub">Dashboard + listado de contenidos.</div>
+            <!-- =========== SIDEBAR AL ESTILO macOS / iCloud ========= -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <div class="sidebar-logo-circle">FE</div>
+                    <div class="sidebar-brand">
+                        <div class="sidebar-title">Wiki FE</div>
+                        <div class="sidebar-sub">Base de conocimiento</div>
+                    </div>
                 </div>
-                <button id="btnNuevo" class="btn">➕ Nuevo artículo</button>
+
+                <nav class="sidebar-nav">
+                    <div class="sidebar-section-label">Navegación</div>
+                    <button class="sidebar-item active">
+                        <span class="sidebar-dot"></span>
+                        <span>Artículos</span>
+                    </button>
+
+                    <button class="sidebar-item" type="button" disabled>
+                        <span class="sidebar-pill">Próximamente</span>
+                        <span>Logs de cambios</span>
+                    </button>
+
+                    <button class="sidebar-item" type="button" disabled>
+                        <span class="sidebar-pill">Próximamente</span>
+                        <span>Administrar usuarios</span>
+                    </button>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <div class="sidebar-user">
+                        <div class="sidebar-avatar">A</div>
+                        <div>
+                            <div class="sidebar-user-name">Administrador</div>
+                            <div class="sidebar-user-role">Panel interno FE</div>
+                        </div>
+                    </div>
+                    <button class="sidebar-footer-badge" type="button">
+                        v1.0 · Beta interna
+                    </button>
+                </div>
+            </aside>
+
+            <!-- ===================== CONTENIDO PRINCIPAL ===================== -->
+            <main class="main">
+
+                <!-- HEADER SUPERIOR -->
+                <header class="topbar">
+                    <div class="topbar-text">
+                        <div class="topbar-title">Panel de artículos</div>
+                        <div class="topbar-sub">
+                            Gestiona contenidos, visibilidad y artículos destacados para los agentes.
+                        </div>
+                    </div>
+
+                    <div class="topbar-actions">
+                        <button id="themeToggle" class="btn-ghost" type="button">
+                            Modo oscuro
+                        </button>
+                    </div>
+                </header>
+
+                <!-- CONTENIDO -->
+                <div class="container">
+
+                    <!-- LISTADO + DASHBOARD -->
+                    <section class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Artículos registrados</div>
+                                <div class="card-sub">Listado general con filtros y métricas básicas.</div>
+                            </div>
+                            <button id="btnNuevo" class="btn primary" type="button">
+                                ➕ Nuevo artículo
+                            </button>
+                        </div>
+
+                        <div class="top-bar">
+                            <div class="top-bar-left">
+                                <input
+                                    id="searchTabla"
+                                    class="search-input"
+                                    placeholder="Filtrar por título, categoría o resumen…"
+                                />
+                            </div>
+                            <div class="top-bar-right">
+                                <span class="top-hint">
+                                    Pulsa sobre un artículo para ver, editar o eliminar.
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- DASHBOARD / MÉTRICAS RÁPIDAS -->
+                        <div class="metrics-row">
+                            <div class="badge">
+                                <span class="badge-dot"></span>
+                                <span id="contadorArticulos">0 artículos</span>
+                            </div>
+
+                            <div class="badge">
+                                <span class="badge-dot success"></span>
+                                <span id="contadorVisibles">0 visibles</span>
+                            </div>
+
+                            <div class="badge">
+                                <span class="badge-dot star"></span>
+                                <span id="contadorDestacados">0 destacados</span>
+                            </div>
+                        </div>
+
+                        <div id="metricsCategorias" class="metrics-categorias"></div>
+
+                        <!-- TABLA DE ARTÍCULOS -->
+                        <div class="table-wrapper">
+                            <table class="tabla">
+                                <thead>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>Categoría</th>
+                                        <th>Visible</th>
+                                        <th>Destacado</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaArticulos"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- FORMULARIO DE ARTÍCULO -->
+                    <section class="card card-form">
+                        <div class="card-title" id="formTitle">Nuevo artículo</div>
+                        <div class="card-sub">
+                            Redacta o actualiza el contenido que verán los agentes en la wiki.
+                        </div>
+
+                        <input type="hidden" id="articuloId" />
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="titulo">Título</label>
+                                <input id="titulo" class="input" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="categoria">Categoría</label>
+                                <input id="categoria" class="input" />
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-10">
+                            <label for="resumen">Resumen</label>
+                            <textarea id="resumen" class="input textarea"></textarea>
+                        </div>
+
+                        <div class="form-group mt-10">
+                            <label>Contenido completo</label>
+                            <div id="editor"></div>
+                        </div>
+
+                        <div class="form-grid mt-10">
+                            <div class="form-group">
+                                <label for="visibleAgentes">Visible para agentes</label>
+                                <select id="visibleAgentes" class="input">
+                                    <option value="true">Sí</option>
+                                    <option value="false">No</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="destacado">Destacado</label>
+                                <select id="destacado" class="input">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí ⭐</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn primary" id="btnGuardar" type="button">
+                                💾 Guardar cambios
+                            </button>
+                            <button class="btn ghost" id="btnLimpiar" type="button">
+                                Limpiar formulario
+                            </button>
+                        </div>
+                    </section>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!--                           MODAL                            -->
+    <!-- ========================================================= -->
+    <div id="modal">
+        <div class="modal-inner">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalTitle" class="modal-title"></h2>
+                    <div id="modalMeta" class="modal-meta"></div>
+                </div>
+                <button id="btnCerrarModal" class="btn-close" type="button">
+                    Cerrar
+                </button>
             </div>
 
-            <div class="top-bar">
-                <input id="searchTabla" class="search-input" placeholder="Filtrar por título, categoría o resumen…" />
+            <div id="modalContent" class="modal-body"></div>
+
+            <button id="btnCopiar" class="copy-btn" type="button">
+                📋 Copiar contenido
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!--                    OVERLAY DE CARGA                       -->
+    <!-- ========================================================= -->
+    <div id="loadingOverlay">
+        <div class="loader-card">
+            <div class="loader-title">Procesando…</div>
+            <div class="loader-bar">
+                <div class="loader-bar-inner"></div>
             </div>
-
-            <!-- DASHBOARD -->
-            <div class="metrics-row">
-                <div class="badge"><span class="badge-dot"></span> <span id="contadorArticulos">0 artículos</span></div>
-                <div class="badge"><span class="badge-dot"></span> <span id="contadorVisibles">0 visibles</span></div>
-                <div class="badge"><span class="badge-dot"></span> <span id="contadorDestacados">0 destacados</span></div>
-            </div>
-
-            <!-- CATEGORÍAS -->
-            <div id="metricsCategorias" class="metrics-categorias"></div>
-
-            <!-- TABLA -->
-            <table class="tabla">
-                <thead>
-                    <tr>
-                        <th>Título</th>
-                        <th>Categoría</th>
-                        <th>Visible</th>
-                        <th>Destacado</th>
-                        <th>Fecha</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaArticulos"></tbody>
-            </table>
-        </section>
-
-
-        <!-- FORMULARIO -->
-        <section class="card">
-            <div class="card-title" id="formTitle">Nuevo artículo</div>
-
-            <input type="hidden" id="articuloId">
-
-            <label>Título</label>
-            <input id="titulo" class="input" />
-
-            <label>Categoría</label>
-            <input id="categoria" class="input" />
-
-            <label>Resumen</label>
-            <textarea id="resumen" class="input"></textarea>
-
-            <label>Contenido completo</label>
-            <div id="editor"></div>
-
-            <label>Visible para agentes</label>
-            <select id="visibleAgentes" class="input">
-                <option value="true">Sí</option>
-                <option value="false">No</option>
-            </select>
-
-            <label>Destacado</label>
-            <select id="destacado" class="input">
-                <option value="false">No</option>
-                <option value="true">Sí ⭐</option>
-            </select>
-
-            <button class="btn primary" id="btnGuardar">💾 Guardar</button>
-            <button class="btn" id="btnLimpiar">Limpiar</button>
-        </section>
-
+            <div id="loadingText" class="loader-text">Cargando datos</div>
+        </div>
     </div>
-</div>
 
+    <!-- ========================================================= -->
+    <!--                   SCRIPTS (ORDEN CORRECTO)                -->
+    <!-- ========================================================= -->
 
-<!-- ========================================================= -->
-<!--                           MODAL                            -->
-<!-- ========================================================= -->
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <h2 id="modalTitle"></h2>
-        <div id="modalMeta"></div>
-        <div id="modalContent"></div>
+    <!-- QUILL JS -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
-        <button id="btnCopiar" class="btn">📋 Copiar contenido</button>
-        <button id="btnCerrarModal" class="btn danger">Cerrar</button>
-    </div>
-</div>
+    <!-- MÓDULOS DEL SISTEMA -->
+    <script type="module" src="./js/firebase-config.js"></script>
+    <script type="module" src="./js/utils.js"></script>
+    <script type="module" src="./js/logs.js"></script>
+    <script type="module" src="./js/admin-auth.js"></script>
 
-
-<!-- ========================================================= -->
-<!--                     LOADING OVERLAY                       -->
-<!-- ========================================================= -->
-<div id="loadingOverlay" class="loading-overlay" style="display:none;">
-    <div class="loading-box">
-        <div class="spinner"></div>
-        <span id="loadingText">Procesando…</span>
-    </div>
-</div>
-
-
-<!-- ========================================================= -->
-<!--                ORDEN CORRECTO DE SCRIPTS                  -->
-<!-- ========================================================= -->
-
-<!-- 1) QUILL JS -->
-<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-
-<!-- 2) MÓDULOS DEL SISTEMA -->
-<script type="module" src="./js/firebase-config.js"></script>
-<script type="module" src="./js/utils.js"></script>
-<script type="module" src="./js/logs.js"></script>
-<script type="module" src="./js/admin-auth.js"></script>
-
-<!-- 3) ADMIN PRINCIPAL (DEBE SER EL ÚLTIMO SIEMPRE) -->
-<script type="module" src="./js/admin.js"></script>
+    <!-- ADMIN PRINCIPAL (DEBE SER EL ÚLTIMO) -->
+    <script type="module" src="./js/admin.js"></script>
 
 </body>
 </html>
