@@ -1,14 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Navegador FE – Base de Conocimiento</title>
 
-<!-- ======================= -->
-<!--   CSP (versión segura)  -->
-<!-- ======================= -->
+<!-- CSP SEGURA -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   script-src 'self' https://www.gstatic.com https://cdn.jsdelivr.net;
@@ -16,59 +13,62 @@
   img-src 'self' data: https:;
   font-src 'self' https:;
   connect-src 'self' https://firestore.googleapis.com https://firebase.googleapis.com;
-  object-src 'none';
   frame-ancestors 'none';
+  object-src 'none';
   base-uri 'self';
-  upgrade-insecure-requests;
 ">
 
-<!-- ======================= -->
-<!--      ESTILOS APPLE      -->
-<!-- ======================= -->
-<link rel="stylesheet" href="css/styles.css" />
+<!-- ESTILOS -->
+<link rel="stylesheet" href="css/styles.css">
 
-<!-- Sanitizador obligatorio -->
+<!-- DOMPurify -->
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.0/dist/purify.min.js"></script>
 
 </head>
 <body>
 
 <!-- ========================================================= -->
-<!--                        NAV SUPERIOR                        -->
+<!--                       HEADER ESTILO MACOS                 -->
 <!-- ========================================================= -->
-<header class="topnav">
+<header>
     <div class="brand">
-        <div class="brand-logo">FE</div>
-        <div class="brand-text">
-            <div class="brand-title">Navegador FE</div>
-            <div class="brand-subtitle">Base de conocimiento para agentes y backoffice</div>
+        <div class="brand-icon">FE</div>
+        <div>
+            <div class="brand-text-title">Navegador FE</div>
+            <div class="brand-text-sub">Base de conocimiento para agentes y backoffice</div>
         </div>
     </div>
 
-    <div class="header-buttons">
-        <button id="btnAdmin" class="btn-secondary">Panel Admin</button>
-        <button id="themeToggle" class="btn-primary">Modo oscuro</button>
+    <div class="header-actions">
+        <button id="btnAdmin" class="btn btn-outline">Panel Admin</button>
+        <button id="themeToggle" class="btn">Modo oscuro</button>
     </div>
 </header>
 
 <!-- ========================================================= -->
-<!--                CONTENIDO PRINCIPAL (APPLE KB)             -->
+<!--                       CONTENIDO                            -->
 <!-- ========================================================= -->
 <div class="container">
 
-    <!-- PANEL BUSCADOR -->
-    <section class="search-box">
-        <div class="search-label">Busca por palabra clave, norma, flujo, producto o speech</div>
+    <!-- ======================= BUSCADOR ======================= -->
+    <section class="search-section">
 
-        <div class="search-container">
-            <span class="search-icon">🔍</span>
-            <input id="searchBar" placeholder="Ej: SBS plazo refinanciamiento, speech objeciones…" />
-            <span class="search-hint">Enter</span>
+        <div class="search-label">Busca por palabra clave, norma, flujo, speech o frase exacta</div>
+
+        <div class="search-wrapper">
+            <span class="search-icon">
+                <span class="fe-icon search"></span>
+            </span>
+
+            <input id="searchBar" placeholder="Ej: SBP refinanciamiento, speech objeciones…" />
+            <span class="search-kbd">Enter</span>
         </div>
 
-        <div class="controls">
-            <div class="control-column">
-                <label>Categoría</label>
+        <!-- FILTROS -->
+        <div class="controls-row">
+
+            <div>
+                <div class="field-label">Categoría</div>
                 <select id="categoriaSelect">
                     <option value="todas">Todas</option>
                     <option value="Norma Regulatoria">Norma Regulatoria</option>
@@ -80,55 +80,60 @@
                 </select>
             </div>
 
-            <div class="control-column">
-                <label>Ordenar por</label>
+            <div>
+                <div class="field-label">Ordenar por</div>
                 <select id="sortSelect">
                     <option value="recientes">Más recientes</option>
                     <option value="vistas">Más vistos</option>
                     <option value="destacados">Destacados</option>
                 </select>
             </div>
+
         </div>
 
-        <div class="history" id="historyBox"></div>
+        <!-- HISTORIAL -->
+        <div id="historyBox" class="history-box"></div>
 
+        <!-- INFO -->
         <div class="info-bar">
             <div id="infoResultados">Mostrando 0 resultados.</div>
             <div id="infoOrden"></div>
         </div>
     </section>
 
-    <!-- ⭐ RECOMENDADOS -->
+    <!-- ================= RECOMENDADOS ================= -->
     <div class="section-title">⭐ Recomendados para hoy</div>
-    <div id="topResults" class="card-grid"></div>
+    <div id="topResults" class="results"></div>
 
-    <!-- 📄 TODOS LOS ARTÍCULOS -->
+    <!-- ================= TODA LA LISTA ================= -->
     <div class="section-title">📄 Todos los artículos</div>
-    <div id="results" class="card-grid"></div>
+    <div id="results" class="results"></div>
 
-    <!-- PAGINACIÓN -->
     <div id="pagination" class="pagination"></div>
 
 </div>
 
 <!-- ========================================================= -->
-<!--                           MODAL                            -->
+<!--                        MODAL                               -->
 <!-- ========================================================= -->
-<div id="modal" class="modal">
-    <div class="modal-panel">
+<div id="modal">
+    <div class="modal-content">
+
         <div class="modal-header">
             <div>
                 <h2 id="modalTitle"></h2>
                 <p id="modalCategory"></p>
             </div>
-            <button id="closeModal" class="modal-close">Cerrar</button>
+            <button id="closeModal">Cerrar</button>
         </div>
-        <div id="modalContent" class="modal-body"></div>
+
+        <div id="modalContent"></div>
+
     </div>
 </div>
 
 <!-- ========================================================= -->
-<!--                        SCRIPTS                             -->
+<!--                    SCRIPTS DEL PROYECTO                    -->
 <!-- ========================================================= -->
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/utils.js"></script>
