@@ -12,6 +12,7 @@ const historyBox       = document.getElementById("historyBox");
 const paginationEl     = document.getElementById("pagination");
 const infoResultadosEl = document.getElementById("infoResultados");
 const infoOrdenEl      = document.getElementById("infoOrden");
+const btnAdmin         = document.getElementById("btnAdmin");
 
 /* --- ESTADO --- */
 let articulosAll = [];
@@ -163,6 +164,12 @@ document.addEventListener("keydown", e => {
         searchBar.focus();
     }
 });
+// Nuevo evento para el botón "Panel Admin"
+btnAdmin.addEventListener("click", () => {
+    // ⚠️ Importante: Reemplaza 'admin.html' con la ruta real de tu panel
+    window.location.href = admin.html; 
+});
 
 /* ================= INICIO ================= */
 cargarArticulos();
+
