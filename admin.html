@@ -1,268 +1,139 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Admin FE - Gestión de Artículos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8" />
+    <title>Admin FE - Gestión de Artículos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<!-- ToastUI desde jsDelivr (permitido por tu CSP) -->
-<link rel="stylesheet" 
-href="https://cdn.jsdelivr.net/npm/@toast-ui/editor@3.2.2/dist/toastui-editor.min.css" />
+    <!-- QUILL LOCAL (evita el error CSP) -->
+    <link rel="stylesheet" href="./libs/quill.snow.css" />
+    <script src="./libs/quill.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/@toast-ui/editor@3.2.2/dist/toastui-editor-all.min.js">
-</script>
-
-  <!-- Estilos del panel admin -->
-  <link rel="stylesheet" href="css/admin.css" />
+    <!-- ESTILOS -->
+    <link rel="stylesheet" href="./css/admin.css" />
 </head>
 <body>
-  <!-- ============= LOGIN ============= -->
-  <div id="loginScreen">
-    <div class="login-card">
-      <div class="login-logo-circle">FE</div>
-      <div class="login-title">Acceso administrativo</div>
-      <div class="login-sub">Inicia sesión para gestionar la base de conocimiento.</div>
 
-      <input class="login-input" id="loginUser" placeholder="Usuario" />
-      <input class="login-input" id="loginPass" type="password" placeholder="Contraseña" />
+    <!-- LOGIN -->
+    <div id="loginScreen">
+        <div class="login-card">
+            <div class="login-logo-circle">FE</div>
+            <div class="login-title">Acceso administrativo</div>
 
-      <button class="login-btn" id="loginBtn">Iniciar sesión</button>
+            <input class="login-input" id="loginUser" placeholder="Usuario" />
+            <input class="login-input" id="loginPass" type="password" placeholder="Contraseña" />
+            <button class="login-btn" id="loginBtn">Ingresar</button>
 
-      <div id="loginError" class="login-error" style="display:none;">
-        Credenciales incorrectas o usuario deshabilitado.
-      </div>
-
-      <div class="login-hint">
-        Acceso exclusivo para administradores de Financiera Efectiva.
-      </div>
-    </div>
-  </div>
-
-  <!-- ============= PANEL ADMIN ============= -->
-  <div id="panel" style="display:none;">
-    <div class="shell">
-      <!-- SIDEBAR -->
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <div class="sidebar-logo-circle">FE</div>
-          <div class="sidebar-brand">
-            <div class="sidebar-title">Wiki FE</div>
-            <div class="sidebar-sub">Base de conocimiento</div>
-          </div>
+            <div id="loginError" class="login-error" style="display:none;">
+                Usuario o contraseña inválida.
+            </div>
         </div>
-
-        <nav class="sidebar-nav">
-          <div class="sidebar-section-label">Navegación</div>
-
-          <button class="sidebar-item active" type="button">
-            <span class="sidebar-dot"></span>
-            <span>Artículos</span>
-          </button>
-
-          <button class="sidebar-item" type="button" disabled>
-            <span class="sidebar-pill">Próximamente</span>
-            <span>Logs de cambios</span>
-          </button>
-
-          <button class="sidebar-item" type="button" disabled>
-            <span class="sidebar-pill">Próximamente</span>
-            <span>Administrar usuarios</span>
-          </button>
-        </nav>
-
-        <div class="sidebar-footer">
-          <div class="sidebar-user">
-            <div class="sidebar-avatar" id="sidebarAvatar">A</div>
-            <div>
-              <div class="sidebar-user-name" id="sidebarUserName">Administrador</div>
-              <div class="sidebar-user-role" id="sidebarUserRole">Panel interno FE</div>
-            </div>
-          </div>
-          <button class="sidebar-footer-badge" type="button">
-            v1.0 · Beta interna
-          </button>
-          <button id="btnLogout" class="btn-ghost btn-logout" type="button">
-            Cerrar sesión
-          </button>
-        </div>
-      </aside>
-
-      <!-- MAIN -->
-      <main class="main">
-        <!-- TOPBAR -->
-        <header class="topbar">
-          <div class="topbar-text">
-            <div class="topbar-title">Panel de artículos</div>
-            <div class="topbar-sub">
-              Gestiona contenidos, visibilidad y artículos destacados para los agentes.
-            </div>
-          </div>
-          <div class="topbar-actions">
-            <button id="themeToggle" class="btn-ghost" type="button">
-              Modo oscuro
-            </button>
-          </div>
-        </header>
-
-        <!-- CONTENIDO -->
-        <div class="container">
-          <!-- LISTADO -->
-          <section class="card">
-            <div class="card-header">
-              <div>
-                <div class="card-title">Artículos registrados</div>
-                <div class="card-sub">Listado general con filtros y métricas básicas.</div>
-              </div>
-              <button id="btnNuevo" class="btn primary" type="button">
-                ➕ Nuevo artículo
-              </button>
-            </div>
-
-            <div class="top-bar">
-              <div class="top-bar-left">
-                <input
-                  id="searchTabla"
-                  class="search-input"
-                  placeholder="Filtrar por título, categoría o resumen…"
-                />
-              </div>
-              <div class="top-bar-right">
-                <span class="top-hint">
-                  Pulsa sobre un artículo para ver, editar o eliminar.
-                </span>
-              </div>
-            </div>
-
-            <!-- MÉTRICAS -->
-            <div class="metrics-row">
-              <div class="badge">
-                <span class="badge-dot"></span>
-                <span id="contadorArticulos">0 artículos</span>
-              </div>
-              <div class="badge">
-                <span class="badge-dot success"></span>
-                <span id="contadorVisibles">0 visibles</span>
-              </div>
-              <div class="badge">
-                <span class="badge-dot star"></span>
-                <span id="contadorDestacados">0 destacados</span>
-              </div>
-            </div>
-            <div id="metricsCategorias" class="metrics-categorias"></div>
-
-            <!-- TABLA -->
-            <div class="table-wrapper">
-              <table class="tabla">
-                <thead>
-                  <tr>
-                    <th>Título</th>
-                    <th>Categoría</th>
-                    <th>Visible</th>
-                    <th>Destacado</th>
-                    <th>Fecha</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody id="tablaArticulos"></tbody>
-              </table>
-            </div>
-          </section>
-
-          <!-- FORM -->
-          <section class="card card-form">
-            <div class="card-title" id="formTitle">Nuevo artículo</div>
-            <div class="card-sub">
-              Redacta o actualiza el contenido que verán los agentes en la wiki.
-            </div>
-
-            <input type="hidden" id="articuloId" />
-
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="titulo">Título</label>
-                <input id="titulo" class="input" />
-              </div>
-              <div class="form-group">
-                <label for="categoria">Categoría</label>
-                <input id="categoria" class="input" />
-              </div>
-            </div>
-
-            <div class="form-group mt-10">
-              <label for="resumen">Resumen</label>
-              <textarea id="resumen" class="input textarea"></textarea>
-            </div>
-
-            <div class="form-group mt-10">
-              <label>Contenido completo</label>
-              <div id="wikiEditor" class="editor-container"></div>
-            </div>
-
-            <div class="form-grid mt-10">
-              <div class="form-group">
-                <label for="visibleAgentes">Visible para agentes</label>
-                <select id="visibleAgentes" class="input">
-                  <option value="true">Sí</option>
-                  <option value="false">No</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="destacado">Destacado</label>
-                <select id="destacado" class="input">
-                  <option value="false">No</option>
-                  <option value="true">Sí ⭐</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button class="btn primary" id="btnGuardar" type="button">
-                💾 Guardar cambios
-              </button>
-              <button class="btn ghost" id="btnLimpiar" type="button">
-                Limpiar formulario
-              </button>
-            </div>
-          </section>
-        </div>
-      </main>
     </div>
-  </div>
 
-  <!-- MODAL VER ARTÍCULO -->
-  <div id="modal">
-    <div class="modal-inner">
-      <div class="modal-header">
-        <div>
-          <h2 id="modalTitle" class="modal-title"></h2>
-          <div id="modalMeta" class="modal-meta"></div>
+    <!-- PANEL ADMIN -->
+    <div id="panel" style="display:none;">
+        <div class="shell">
+
+            <!-- SIDEBAR -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <div class="sidebar-logo-circle">FE</div>
+                    <div class="sidebar-brand">
+                        <div class="sidebar-title">Wiki FE</div>
+                        <div class="sidebar-sub">Base de conocimiento</div>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <button class="sidebar-item active">Artículos</button>
+                </nav>
+            </aside>
+
+            <!-- MAIN -->
+            <main class="main">
+                <header class="topbar">
+                    <div class="topbar-title">Gestión de artículos</div>
+                </header>
+
+                <div class="container">
+
+                    <!-- LISTA -->
+                    <section class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Artículos registrados</div>
+                            </div>
+                            <button id="btnNuevo" class="btn primary">➕ Nuevo artículo</button>
+                        </div>
+
+                        <input id="searchTabla" placeholder="Buscar…" class="search-input"/>
+
+                        <table class="tabla">
+                            <thead>
+                                <tr>
+                                    <th>Título</th>
+                                    <th>Categoría</th>
+                                    <th>Visible</th>
+                                    <th>Destacado</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaArticulos"></tbody>
+                        </table>
+                    </section>
+
+                    <!-- FORM -->
+                    <section class="card card-form">
+                        <div class="card-title" id="formTitle">Nuevo artículo</div>
+
+                        <input type="hidden" id="articuloId" />
+
+                        <label>Título</label>
+                        <input id="titulo" class="input"/>
+
+                        <label>Categoría</label>
+                        <input id="categoria" class="input"/>
+
+                        <label>Resumen</label>
+                        <textarea id="resumen" class="input textarea"></textarea>
+
+                        <label>Contenido</label>
+                        <div id="editor"></div>
+
+                        <label>Visible</label>
+                        <select id="visibleAgentes" class="input">
+                            <option value="true">Sí</option>
+                            <option value="false">No</option>
+                        </select>
+
+                        <label>Destacado</label>
+                        <select id="destacado" class="input">
+                            <option value="false">No</option>
+                            <option value="true">Sí ⭐</option>
+                        </select>
+
+                        <button id="btnGuardar" class="btn primary">💾 Guardar</button>
+                    </section>
+                </div>
+            </main>
         </div>
-        <button id="btnCerrarModal" class="btn-close" type="button">
-          Cerrar
-        </button>
-      </div>
-      <div id="modalContent" class="modal-body"></div>
-      <button id="btnCopiar" class="copy-btn" type="button">
-        📋 Copiar contenido
-      </button>
     </div>
-  </div>
 
-  <!-- OVERLAY CARGA -->
-  <div id="loadingOverlay">
-    <div class="loader-card">
-      <div class="loader-title">Procesando…</div>
-      <div class="loader-bar">
-        <div class="loader-bar-inner"></div>
-      </div>
-      <div id="loadingText" class="loader-text">Cargando datos</div>
+    <!-- MODAL -->
+    <div id="modal">
+        <div class="modal-inner">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <button id="closeModal">Cerrar</button>
+            </div>
+            <div id="modalContent" class="modal-body"></div>
+        </div>
     </div>
-  </div>
 
-  <!-- Firebase + lógica -->
-  <script type="module" src="js/firebase-config.js"></script>
-  <script type="module" src="js/utils.js"></script>
-  <script type="module" src="js/admin-auth.js"></script>
-  <script type="module" src="js/admin.js"></script>
+    <!-- FIREBASE + JS -->
+    <script type="module" src="./js/firebase-config.js"></script>
+    <script type="module" src="./js/admin-auth.js"></script>
+    <script type="module" src="./js/admin.js"></script>
+
 </body>
 </html>
