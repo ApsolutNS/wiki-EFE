@@ -4,7 +4,8 @@
 
 import { db } from "./firebase-config.js";
 import { registrarLog } from "./logs.js";
-import { sha256 } from "./utils.js";
+import { toDateSafe, normalizar, debounce } from "./utils.js";
+import { sha256 } from "./admin-auth.js"; // esta SÍ exporta sha256
 import { intentarLogin, getCurrentUser } from "./admin-auth.js";
 
 import {
