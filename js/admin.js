@@ -1,5 +1,6 @@
 /* ============================================================
-   ADMIN.JS — Panel FE con Firebase Auth + Firestore + Quill
+   ADMIN.JS — Panel FE usando Firebase Auth + Firestore + Quill
+   Compatible 100% con CSP (sin inline JS)
    ============================================================ */
 
 import { auth, db } from "./firebase-config.js";
@@ -20,35 +21,37 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* -----------------------
-    ELEMENTOS DOM
------------------------ */
-const loginScreen = document.getElementById("loginScreen");
-const panel = document.getElementById("panel");
-const loginBtn = document.getElementById("loginBtn");
-const loginError = document.getElementById("loginError");
+/* ============================================================
+   ELEMENTOS DOM
+   ============================================================ */
+const loginScreen      = document.getElementById("loginScreen");
+const panel            = document.getElementById("panel");
+const loginBtn         = document.getElementById("loginBtn");
+const loginError       = document.getElementById("loginError");
 
-const titulo = document.getElementById("titulo");
-const categoria = document.getElementById("categoria");
-const resumen = document.getElementById("resumen");
-const visibleAgentes = document.getElementById("visibleAgentes");
-const destacado = document.getElementById("destacado");
-const articuloId = document.getElementById("articuloId");
+const titulo           = document.getElementById("titulo");
+const categoria        = document.getElementById("categoria");
+const resumen          = document.getElementById("resumen");
+const visibleAgentes   = document.getElementById("visibleAgentes");
+const destacado        = document.getElementById("destacado");
+const articuloId       = document.getElementById("articuloId");
 
-const searchTabla = document.getElementById("searchTabla");
-const tablaArticulos = document.getElementById("tablaArticulos");
+const searchTabla      = document.getElementById("searchTabla");
+const tablaArticulos   = document.getElementById("tablaArticulos");
 
-const btnNuevo = document.getElementById("btnNuevo");
-const btnGuardar = document.getElementById("btnGuardar");
+const btnNuevo         = document.getElementById("btnNuevo");
+const btnGuardar       = document.getElementById("btnGuardar");
 
-const modal = document.getElementById("modal");
-const modalTitle = document.getElementById("modalTitle");
-const modalContent = document.getElementById("modalContent");
-const closeModal = document.getElementById("closeModal");
+const modal            = document.getElementById("modal");
+const modalTitle       = document.getElementById("modalTitle");
+const modalContent     = document.getElementById("modalContent");
+const closeModal       = document.getElementById("closeModal");
 
-/* -----------------------
-    QUILL (EDITOR)
------------------------ */
+const logoutBtn        = document.getElementById("logoutBtn");
+
+/* ============================================================
+   QUILL
+   ============================================================ */
 let quill;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -57,25 +60,38 @@ document.addEventListener("DOMContentLoaded", () => {
         placeholder: "Escribe el contenido completo del artículo…"
     });
 
-    cargarArticulos();
+    // Solo carga artículos si ya hay usuario logueado
+    onAuthStateChanged(auth, user => {
+        if (user) cargarArticulos();
+    });
 });
 
-/* -----------------------
+/* ============================================================
    LOGIN
------------------------ */
+   ============================================================ */
 loginBtn.addEventListener("click", async () => {
     const email = document.getElementById("loginUser").value.trim();
-    const pass = document.getElementById("loginPass").value.trim();
+    const pass  = document.getElementById("loginPass").value.trim();
+
+    if (!email || !pass) {
+        loginError.textContent = "Ingrese correo y contraseña.";
+        loginError.style.display = "block";
+        return;
+    }
 
     try {
         await signInWithEmailAndPassword(auth, email, pass);
         loginError.style.display = "none";
     } catch (e) {
+        console.error(e);
+        loginError.textContent = "Credenciales incorrectas.";
         loginError.style.display = "block";
     }
 });
 
-/* Detectar si está logueado */
+/* ============================================================
+   ESTADO DE AUTENTICACIÓN
+   ============================================================ */
 onAuthStateChanged(auth, user => {
     if (user) {
         loginScreen.style.display = "none";
@@ -86,35 +102,40 @@ onAuthStateChanged(auth, user => {
     }
 });
 
-/* Logout opcional */
-function logout() {
+/* ============================================================
+   LOGOUT
+   ============================================================ */
+logoutBtn.addEventListener("click", () => {
     signOut(auth);
-}
+});
 
-/* -----------------------
+/* ============================================================
    CARGAR ARTÍCULOS
------------------------ */
+   ============================================================ */
 let articulosCache = [];
 
 async function cargarArticulos() {
     const snap = await getDocs(collection(db, "articulos"));
 
-    articulosCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    articulosCache = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+    }));
 
     renderTabla(articulosCache);
 }
 
-/* -----------------------
+/* ============================================================
    RENDER TABLA
------------------------ */
+   ============================================================ */
 function renderTabla(lista) {
     tablaArticulos.innerHTML = lista.map(a => {
         const fecha = a.fecha?.toDate?.().toLocaleDateString("es-PE") || "-";
 
         return `
         <tr>
-            <td>${a.titulo}</td>
-            <td>${a.categoria}</td>
+            <td>${escapeHTML(a.titulo)}</td>
+            <td>${escapeHTML(a.categoria)}</td>
             <td>${a.visibleAgentes ? "Sí" : "No"}</td>
             <td>${a.destacado ? "⭐" : "—"}</td>
             <td>${fecha}</td>
@@ -137,62 +158,68 @@ function renderTabla(lista) {
     );
 }
 
-/* -----------------------
-   VER ARTÍCULO (MODAL)
------------------------ */
+/* ============================================================
+   VER ARTÍCULO — Modal seguro con sanitización
+   ============================================================ */
 function verArticulo(id) {
     const art = articulosCache.find(a => a.id === id);
     if (!art) return;
 
     modalTitle.textContent = art.titulo;
-    modalContent.innerHTML = art.contenido || "";
+
+    // Sanitizar contenido HTML para evitar XSS
+    modalContent.innerHTML = DOMPurify.sanitize(art.contenido || "");
 
     modal.style.display = "flex";
 }
 
-closeModal.onclick = () => (modal.style.display = "none");
+closeModal.onclick = () => {
+    modal.style.display = "none";
+};
 
-/* -----------------------
-   EDITAR
------------------------ */
+/* ============================================================
+   EDITAR ARTÍCULO
+   ============================================================ */
 async function editarArticulo(id) {
     const ref = doc(db, "articulos", id);
     const snap = await getDoc(ref);
 
-    if (!snap.exists()) return alert("No encontrado");
+    if (!snap.exists()) {
+        alert("Artículo no encontrado.");
+        return;
+    }
 
     const a = snap.data();
 
-    articuloId.value = id;
-    titulo.value = a.titulo;
-    categoria.value = a.categoria;
-    resumen.value = a.resumen;
+    articuloId.value     = id;
+    titulo.value         = a.titulo;
+    categoria.value      = a.categoria;
+    resumen.value        = a.resumen;
     visibleAgentes.value = a.visibleAgentes ? "true" : "false";
-    destacado.value = a.destacado ? "true" : "false";
-
+    destacado.value      = a.destacado ? "true" : "false";
     quill.root.innerHTML = a.contenido || "";
 
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-/* -----------------------
-   NUEVO / LIMPIAR
------------------------ */
+/* ============================================================
+   LIMPIAR FORMULARIO
+   ============================================================ */
 btnNuevo.onclick = limpiarFormulario;
 
 function limpiarFormulario() {
-    articuloId.value = "";
-    titulo.value = "";
-    categoria.value = "";
-    resumen.value = "";
+    articuloId.value     = "";
+    titulo.value         = "";
+    categoria.value      = "";
+    resumen.value        = "";
     visibleAgentes.value = "true";
-    destacado.value = "false";
+    destacado.value      = "false";
     quill.root.innerHTML = "";
 }
 
-/* -----------------------
-   GUARDAR / ACTUALIZAR
------------------------ */
+/* ============================================================
+   CREAR / ACTUALIZAR
+   ============================================================ */
 btnGuardar.addEventListener("click", async () => {
     const data = {
         titulo: titulo.value.trim(),
@@ -206,16 +233,15 @@ btnGuardar.addEventListener("click", async () => {
     };
 
     if (!data.titulo || !data.categoria || !data.resumen) {
-        return alert("Completa todos los campos obligatorios.");
+        alert("Completa todos los campos obligatorios.");
+        return;
     }
 
     try {
         if (articuloId.value) {
-            // UPDATE
             await updateDoc(doc(db, "articulos", articuloId.value), data);
             alert("Artículo actualizado.");
         } else {
-            // CREATE
             await addDoc(collection(db, "articulos"), {
                 ...data,
                 createdAt: serverTimestamp()
@@ -232,9 +258,9 @@ btnGuardar.addEventListener("click", async () => {
     }
 });
 
-/* -----------------------
+/* ============================================================
    ELIMINAR
------------------------ */
+   ============================================================ */
 async function eliminarArticulo(id) {
     if (!confirm("¿Eliminar artículo?")) return;
 
@@ -244,9 +270,9 @@ async function eliminarArticulo(id) {
     cargarArticulos();
 }
 
-/* -----------------------
-   BUSCADOR TABLA
------------------------ */
+/* ============================================================
+   BUSCADOR
+   ============================================================ */
 searchTabla.addEventListener("input", () => {
     const q = searchTabla.value.trim().toLowerCase();
 
@@ -257,3 +283,13 @@ searchTabla.addEventListener("input", () => {
 
     renderTabla(filtrados);
 });
+
+/* ============================================================
+   FUNCIÓN DE SANITIZACIÓN SIMPLE PARA TEXTO
+   ============================================================ */
+function escapeHTML(str) {
+    return (str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
