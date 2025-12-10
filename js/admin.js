@@ -2,6 +2,9 @@
 "use strict";
 
 import { db } from "./firebase-config.js";
+import { normalizar, toDateSafe, debounce } from "./utils.js";
+import { intentarLogin, getCurrentUser, logoutAdmin } from "./admin-auth.js";
+
 import {
   collection,
   getDocs,
@@ -13,57 +16,17 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* =========================================================
-   ESTADO GLOBAL
-========================================================= */
+/* ========== ToastUI Editor instancia global ========== */
+let editor; // se inicializa en DOMContentLoaded
+
+/* ========== Colecciones ========== */
 const colArticulos = collection(db, "articulos");
-const colLogs = collection(db, "logs_articulos");
+const colLogs = collection(db, "admin_logs");
+
+/* ========== Estado ========== */
 let articulosCache = [];
-let editor; // ToastUI
-let appInitialized = false;
 
-const SESSION_KEY = "wiki_fe_admin_user";
-
-/* =========================================================
-   LOGIN LOCAL (solo panel, NO Firestore)
-   --> cambia las credenciales a las que tú quieras
-========================================================= */
-const ADMIN_USERS = {
-  // usuario: { password, nombreVisible }
-  anunez: { password: "admin123", nombre: "Alex Nuñez" },
-  admin: { password: "admin123", nombre: "Administrador" }
-};
-
-function getCurrentUser() {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function setCurrentUser(userObj) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(userObj));
-}
-
-function clearCurrentUser() {
-  localStorage.removeItem(SESSION_KEY);
-}
-
-function showPanel() {
-  document.getElementById("loginScreen").style.display = "none";
-  document.getElementById("panel").style.display = "block";
-}
-
-function showLogin() {
-  document.getElementById("panel").style.display = "none";
-  document.getElementById("loginScreen").style.display = "flex";
-}
-
-/* =========================================================
-   LOADING
-========================================================= */
+/* ========== Helpers UI ========== */
 function setLoading(show, text = "Procesando…") {
   const overlay = document.getElementById("loadingOverlay");
   const label = document.getElementById("loadingText");
@@ -72,20 +35,29 @@ function setLoading(show, text = "Procesando…") {
   overlay.style.display = show ? "flex" : "none";
 }
 
-/* =========================================================
-   UTILS
-========================================================= */
-function toDateSafe(value) {
-  if (!value) return new Date();
-  if (value.toDate) return value.toDate();
-  return new Date(value);
+function mostrarPanelAdmin(user) {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("panel").style.display = "block";
+
+  // Datos en sidebar
+  const nameEl = document.getElementById("sidebarUserName");
+  const roleEl = document.getElementById("sidebarUserRole");
+  const avatarEl = document.getElementById("sidebarAvatar");
+
+  if (nameEl) nameEl.textContent = user.username;
+  if (roleEl) roleEl.textContent = user.role || "Admin";
+  if (avatarEl) avatarEl.textContent = (user.username || "A").charAt(0).toUpperCase();
 }
 
-/* Registrar logs básicos (opcional pero útil) */
-async function registrarLog(payload) {
+/* ====== Logs ====== */
+async function registrarLogEntrada({ articuloId, accion, antes, despues, usuarioEmail }) {
   try {
     await addDoc(colLogs, {
-      ...payload,
+      articuloId: articuloId || null,
+      accion,
+      antes: antes || null,
+      despues: despues || null,
+      usuarioEmail: usuarioEmail || null,
       createdAt: serverTimestamp()
     });
   } catch (e) {
@@ -93,9 +65,7 @@ async function registrarLog(payload) {
   }
 }
 
-/* =========================================================
-   CARGA TABLA
-========================================================= */
+/* ====== Cargar tabla ====== */
 async function cargarTabla() {
   const tbody = document.getElementById("tablaArticulos");
   try {
@@ -103,7 +73,7 @@ async function cargarTabla() {
     tbody.innerHTML = "<tr><td colspan='6'>Cargando...</td></tr>";
 
     const snap = await getDocs(colArticulos);
-    articulosCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    articulosCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
     articulosCache.sort((a, b) => {
       const fa = a.fecha ? toDateSafe(a.fecha) : 0;
@@ -136,12 +106,10 @@ function actualizarDashboard(lista) {
     cats[c] = (cats[c] || 0) + 1;
   });
 
-  const cont = document.getElementById("metricsCategorias");
-  cont.innerHTML = Object.keys(cats).length
-    ? Object.entries(cats)
-        .map(([cat, cant]) => `<span class="cat-pill">${cat}: ${cant}</span>`)
-        .join("")
-    : "";
+  document.getElementById("metricsCategorias").innerHTML =
+    Object.keys(cats)
+      .map(c => `<span class="cat-pill">${c}: ${cats[c]}</span>`)
+      .join("");
 }
 
 function renderTabla(lista) {
@@ -153,27 +121,22 @@ function renderTabla(lista) {
     return;
   }
 
-  tbody.innerHTML = lista.map(a => {
-    const fechaStr = a.fecha
-      ? toDateSafe(a.fecha).toLocaleDateString("es-PE")
-      : "-";
-    return `
-      <tr>
-        <td>${a.titulo || ""}</td>
-        <td>${a.categoria || ""}</td>
-        <td>${a.visibleAgentes ? "Sí" : "No"}</td>
-        <td>${a.destacado ? "⭐" : "—"}</td>
-        <td>${fechaStr}</td>
-        <td>
-          <div class="actions">
-            <button class="btn-xs btn-ver" data-id="${a.id}">Ver</button>
-            <button class="btn-xs primary btn-editar" data-id="${a.id}">Editar</button>
-            <button class="btn-xs danger btn-eliminar" data-id="${a.id}">Eliminar</button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join("");
+  tbody.innerHTML = lista.map(a => `
+    <tr>
+      <td>${a.titulo || ""}</td>
+      <td>${a.categoria || ""}</td>
+      <td>${a.visibleAgentes ? "Sí" : "No"}</td>
+      <td>${a.destacado ? "⭐" : "—"}</td>
+      <td>${a.fecha ? toDateSafe(a.fecha).toLocaleDateString("es-PE") : "-"}</td>
+      <td>
+        <div class="actions">
+          <button class="btn-xs btn-ver" data-id="${a.id}">Ver</button>
+          <button class="btn-xs primary btn-editar" data-id="${a.id}">Editar</button>
+          <button class="btn-xs danger btn-eliminar" data-id="${a.id}">Eliminar</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
 
   tbody.querySelectorAll(".btn-ver").forEach(btn =>
     btn.addEventListener("click", () => verArticulo(btn.dataset.id))
@@ -186,117 +149,95 @@ function renderTabla(lista) {
   );
 }
 
-/* =========================================================
-   VER / EDITAR / ELIMINAR
-========================================================= */
+/* ====== Ver / Editar / Eliminar ====== */
 function verArticulo(id) {
   const art = articulosCache.find(a => a.id === id);
   if (!art) return alert("Artículo no encontrado");
 
-  document.getElementById("modalTitle").textContent = art.titulo || "";
   const fechaTxt = art.fecha
     ? toDateSafe(art.fecha).toLocaleString("es-PE")
     : "-";
 
+  document.getElementById("modalTitle").textContent = art.titulo || "";
   document.getElementById("modalMeta").textContent =
     `${art.categoria || "Sin categoría"} • ${fechaTxt}`;
 
+  // se muestra HTML tal cual lo guardaste (contenido del editor)
   document.getElementById("modalContent").innerHTML = art.contenido || "";
+
   const modal = document.getElementById("modal");
-  modal.style.display = "flex";
+  modal.style.display = "block";
 
   document.getElementById("btnCopiar").onclick = async () => {
     const temp = document.createElement("div");
     temp.innerHTML = art.contenido || "";
-    await navigator.clipboard.writeText(temp.innerText);
+    await navigator.clipboard.writeText(temp.innerText || "");
     alert("Contenido copiado.");
   };
 }
 
 async function editarArticulo(id) {
-  try {
-    setLoading(true, "Cargando artículo…");
-    const ref = doc(db, "articulos", id);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
-      alert("Artículo no disponible");
-      return;
-    }
-    const art = snap.data();
+  const ref = doc(db, "articulos", id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return alert("Artículo no disponible");
 
-    document.getElementById("articuloId").value = id;
-    document.getElementById("titulo").value = art.titulo || "";
-    document.getElementById("categoria").value = art.categoria || "";
-    document.getElementById("resumen").value = art.resumen || "";
-    document.getElementById("visibleAgentes").value =
-      art.visibleAgentes ? "true" : "false";
-    document.getElementById("destacado").value =
-      art.destacado ? "true" : "false";
+  const art = snap.data();
 
-    editor.setHTML(art.contenido || "");
-    document.getElementById("formTitle").textContent = "Editar artículo";
+  document.getElementById("articuloId").value = id;
+  document.getElementById("titulo").value = art.titulo || "";
+  document.getElementById("categoria").value = art.categoria || "";
+  document.getElementById("resumen").value = art.resumen || "";
+  document.getElementById("visibleAgentes").value = art.visibleAgentes ? "true" : "false";
+  document.getElementById("destacado").value = art.destacado ? "true" : "false";
 
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-  } catch (e) {
-    console.error(e);
-    alert("Error al cargar el artículo: " + e.message);
-  } finally {
-    setLoading(false);
-  }
+  // Cargar contenido en ToastUI
+  const html = art.contenido || "";
+  editor.setHTML(html);
+
+  document.getElementById("formTitle").textContent = "Editar artículo";
+  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 }
 
 async function eliminarArticulo(id) {
   if (!confirm("¿Eliminar este artículo?")) return;
 
-  try {
-    setLoading(true, "Eliminando artículo…");
-    const ref = doc(db, "articulos", id);
-    const snap = await getDoc(ref);
-    const anterior = snap.exists() ? snap.data() : null;
+  const ref = doc(db, "articulos", id);
+  const snap = await getDoc(ref);
+  const anterior = snap.exists() ? snap.data() : null;
 
-    await deleteDoc(ref);
+  await deleteDoc(ref);
 
-    await registrarLog({
-      articuloId: id,
-      accion: "delete",
-      antes: anterior,
-      despues: null,
-      usuarioEmail: getCurrentUser()?.username || null
-    });
+  const user = getCurrentUser();
+  await registrarLogEntrada({
+    articuloId: id,
+    accion: "delete",
+    antes: anterior,
+    despues: null,
+    usuarioEmail: user?.username
+  });
 
-    alert("Artículo eliminado correctamente.");
-    await cargarTabla();
-  } catch (e) {
-    console.error(e);
-    alert("Error al eliminar: " + e.message);
-  } finally {
-    setLoading(false);
-  }
+  alert("Eliminado correctamente");
+  cargarTabla();
 }
 
-/* =========================================================
-   BUSCADOR
-========================================================= */
+/* ====== Buscador ====== */
 function initBuscadorTabla() {
   const input = document.getElementById("searchTabla");
-  input.addEventListener("input", (evt) => {
-    const q = (evt.target.value || "").toLowerCase().trim();
-    if (!q) {
-      renderTabla(articulosCache);
-      return;
-    }
+  input.addEventListener("input", debounce(() => {
+    const q = normalizar(input.value);
+    if (!q) return renderTabla(articulosCache);
+
     const filtrados = articulosCache.filter(a =>
-      (a.titulo || "").toLowerCase().includes(q) ||
-      (a.resumen || "").toLowerCase().includes(q) ||
-      (a.categoria || "").toLowerCase().includes(q)
+      normalizar(a.titulo).includes(q) ||
+      normalizar(a.resumen).includes(q) ||
+      normalizar(a.categoria).includes(q)
     );
+
     renderTabla(filtrados);
-  });
+  }, 250));
 }
 
-/* =========================================================
-   FORMULARIO / GUARDAR
-========================================================= */
+/* ====== Form ====== */
 function limpiarFormulario() {
   document.getElementById("articuloId").value = "";
   document.getElementById("titulo").value = "";
@@ -310,6 +251,7 @@ function limpiarFormulario() {
 
 async function guardarArticuloHandler() {
   const id = document.getElementById("articuloId").value.trim();
+
   const articulo = {
     titulo: document.getElementById("titulo").value.trim(),
     categoria: document.getElementById("categoria").value.trim(),
@@ -324,10 +266,11 @@ async function guardarArticuloHandler() {
     return;
   }
 
-  const usuarioEmail = getCurrentUser()?.username || null;
+  const user = getCurrentUser();
+  const usuarioEmail = user?.username;
 
   try {
-    setLoading(true, id ? "Actualizando artículo…" : "Creando artículo…");
+    setLoading(true, "Guardando artículo…");
 
     if (id) {
       const ref = doc(db, "articulos", id);
@@ -341,7 +284,7 @@ async function guardarArticuloHandler() {
         fecha: serverTimestamp()
       }, { merge: true });
 
-      await registrarLog({
+      await registrarLogEntrada({
         articuloId: id,
         accion: "update",
         antes: anterior,
@@ -349,7 +292,7 @@ async function guardarArticuloHandler() {
         usuarioEmail
       });
 
-      alert("Artículo actualizado correctamente.");
+      alert("Artículo actualizado.");
     } else {
       const ref = await addDoc(colArticulos, {
         ...articulo,
@@ -359,7 +302,7 @@ async function guardarArticuloHandler() {
         fecha: serverTimestamp()
       });
 
-      await registrarLog({
+      await registrarLogEntrada({
         articuloId: ref.id,
         accion: "create",
         antes: null,
@@ -367,35 +310,34 @@ async function guardarArticuloHandler() {
         usuarioEmail
       });
 
-      alert("Artículo creado correctamente.");
+      alert("Artículo creado.");
     }
 
     limpiarFormulario();
-    await cargarTabla();
+    cargarTabla();
   } catch (e) {
     console.error(e);
-    alert("Error al guardar: " + e.message);
+    alert("Error guardando artículo: " + e.message);
   } finally {
     setLoading(false);
   }
 }
 
-/* =========================================================
-   MODAL
-========================================================= */
+/* ====== Modal ====== */
 function initModal() {
   const modal = document.getElementById("modal");
-  document.getElementById("btnCerrarModal").addEventListener("click", () => {
+  const btnCerrar = document.getElementById("btnCerrarModal");
+
+  btnCerrar.onclick = () => {
     modal.style.display = "none";
-  });
-  modal.addEventListener("click", (e) => {
+  };
+
+  modal.addEventListener("click", e => {
     if (e.target === modal) modal.style.display = "none";
   });
 }
 
-/* =========================================================
-   THEME
-========================================================= */
+/* ====== Theme ====== */
 function initThemeToggle() {
   const btn = document.getElementById("themeToggle");
   const KEY = "fe_admin_theme";
@@ -410,8 +352,7 @@ function initThemeToggle() {
     }
   }
 
-  const saved = localStorage.getItem(KEY) || "light";
-  apply(saved);
+  apply(localStorage.getItem(KEY) || "light");
 
   btn.addEventListener("click", () => {
     const next = document.body.classList.contains("dark") ? "light" : "dark";
@@ -420,110 +361,88 @@ function initThemeToggle() {
   });
 }
 
-/* =========================================================
-   LOGIN UI
-========================================================= */
-function initLoginUI() {
-  const userInput = document.getElementById("loginUser");
-  const passInput = document.getElementById("loginPass");
-  const btnLogin = document.getElementById("loginBtn");
-  const err = document.getElementById("loginError");
+/* ====== Login + Logout ====== */
+function initLogin() {
+  const loginBtn = document.getElementById("loginBtn");
+  const errorEl = document.getElementById("loginError");
 
-  async function handleLogin() {
-    const user = (userInput.value || "").trim();
-    const pass = (passInput.value || "").trim();
-    err.style.display = "none";
+  loginBtn.addEventListener("click", async () => {
+    errorEl.style.display = "none";
+
+    const user = document.getElementById("loginUser").value.trim();
+    const pass = document.getElementById("loginPass").value.trim();
 
     if (!user || !pass) {
-      err.textContent = "Complete usuario y contraseña.";
-      err.style.display = "block";
+      errorEl.textContent = "Complete usuario y contraseña.";
+      errorEl.style.display = "block";
       return;
     }
 
-    const cfg = ADMIN_USERS[user];
-    if (!cfg || cfg.password !== pass) {
-      err.textContent = "Credenciales incorrectas.";
-      err.style.display = "block";
-      return;
-    }
+    try {
+      setLoading(true, "Verificando credenciales…");
+      const result = await intentarLogin(user, pass);
 
-    setCurrentUser({ username: user, nombre: cfg.nombre });
-    applyUserToSidebar();
-    showPanel();
-    if (!appInitialized) {
-      initAppAfterLogin();
+      if (!result) {
+        errorEl.textContent = "Credenciales incorrectas o usuario deshabilitado.";
+        errorEl.style.display = "block";
+        return;
+      }
+
+      mostrarPanelAdmin(result);
+
+      await registrarLogEntrada({
+        articuloId: null,
+        accion: "login",
+        antes: null,
+        despues: { usuario: result.username },
+        usuarioEmail: result.username
+      });
+
+      // Cargar datos
+      await cargarTabla();
+    } catch (e) {
+      console.error(e);
+      errorEl.textContent = "Error en el login: " + e.message;
+      errorEl.style.display = "block";
+    } finally {
+      setLoading(false);
     }
+  });
+
+  const sesion = getCurrentUser();
+  if (sesion) {
+    mostrarPanelAdmin(sesion);
+    cargarTabla();
   }
-
-  btnLogin.addEventListener("click", handleLogin);
-
-  passInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleLogin();
-  });
 }
 
-function applyUserToSidebar() {
-  const u = getCurrentUser();
-  const name = u?.nombre || "Administrador";
-  document.getElementById("sidebarName").textContent = name;
-  const avatar = document.getElementById("sidebarAvatar");
-  avatar.textContent = name.charAt(0).toUpperCase();
-}
-
-/* =========================================================
-   LOGOUT
-========================================================= */
 function initLogout() {
-  const btn = document.getElementById("btnLogout");
-  btn.addEventListener("click", () => {
-    clearCurrentUser();
-    showLogin();
+  const btnLogout = document.getElementById("btnLogout");
+  btnLogout.addEventListener("click", () => {
+    logoutAdmin();
+    location.reload();
   });
 }
 
-/* =========================================================
-   INICIALIZACIÓN GENERAL
-========================================================= */
-function initEditor() {
-  const { Editor } = window.toastui;
-  editor = new Editor({
-    el: document.getElementById("editor"),
-    height: "360px",
+/* ====== INIT GLOBAL ====== */
+document.addEventListener("DOMContentLoaded", () => {
+  // ToastUI Editor
+  editor = new toastui.Editor({
+    el: document.querySelector("#wikiEditor"),
+    height: "380px",
     initialEditType: "wysiwyg",
     previewStyle: "vertical",
-    usageStatistics: false
+    usageStatistics: false,
+    hideModeSwitch: true
   });
-}
 
-async function initAppAfterLogin() {
-  if (appInitialized) return;
-  appInitialized = true;
-
-  initEditor();
-  initThemeToggle();
-  initModal();
   initBuscadorTabla();
+  initModal();
+  initThemeToggle();
+  initLogin();
   initLogout();
 
-  document.getElementById("btnGuardar").addEventListener("click", guardarArticuloHandler);
-  document.getElementById("btnLimpiar").addEventListener("click", limpiarFormulario);
-  document.getElementById("btnNuevo").addEventListener("click", limpiarFormulario);
-
-  await cargarTabla();
-}
-
-/* =========================================================
-   DOM READY
-========================================================= */
-document.addEventListener("DOMContentLoaded", () => {
-  initLoginUI();
-
-  const user = getCurrentUser();
-  if (user) {
-    applyUserToSidebar();
-    showPanel();
-    initAppAfterLogin();
-  } else {
-    showLogin();
-  }
+  document.getElementById("btnGuardar").onclick = guardarArticuloHandler;
+  document.getElementById("btnLimpiar").onclick = limpiarFormulario;
+  document.getElementById("btnNuevo").onclick = limpiarFormulario;
 });
