@@ -1,61 +1,28 @@
-/* ============================================================
-   ADMIN-AUTH.JS — Sistema simple basado en Firestore + SHA-256
-   ============================================================ */
-
 import { db } from "./firebase-config.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// Convertir password a SHA-256 (hex)
-export async function sha256(text) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(text);
-    const hash = await crypto.subtle.digest("SHA-256", data);
-    return [...new Uint8Array(hash)]
-        .map(b => b.toString(16).padStart(2, "0"))
-        .join("");
+export async function intentarLogin(usuario, password) {
+    const ref = doc(db, "admin_users", usuario);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) return false;
+
+    const data = snap.data();
+
+    if (!data.activo) return false;
+
+    if (data.password !== password) return false;
+
+    // Guardar sesión
+    localStorage.setItem("fe_admin_user", usuario);
+
+    return true;
 }
 
-// Guardar sesión
-export function guardarSesion(user) {
-    localStorage.setItem("fe_admin_user", JSON.stringify(user));
-}
-
-// Obtener sesión
 export function getCurrentUser() {
-    try {
-        return JSON.parse(localStorage.getItem("fe_admin_user"));
-    } catch {
-        return null;
-    }
+    return localStorage.getItem("fe_admin_user");
 }
 
-// Cerrar sesión
-export function logout() {
+export function logoutAdmin() {
     localStorage.removeItem("fe_admin_user");
-    location.reload();
-}
-
-// Intento de login
-export async function intentarLogin(username, password) {
-    try {
-        const ref = doc(db, "admin_users", username);
-        const snap = await getDoc(ref);
-
-        if (!snap.exists()) return false;
-
-        const data = snap.data();
-        const hashIngresado = await sha256(password);
-
-        if (hashIngresado !== data.hash) {
-            return false;
-        }
-
-        const user = { username, role: data.role || "admin" };
-        guardarSesion(user);
-        return user;
-
-    } catch (err) {
-        console.error("Error login:", err);
-        return false;
-    }
 }
