@@ -1,52 +1,61 @@
-/* =====================================================
-   ADMIN-AUTH.JS (SHA-256 Login)
-   ===================================================== */
+/* ============================================================
+   ADMIN-AUTH.JS — Sistema simple basado en Firestore + SHA-256
+   ============================================================ */
 
 import { db } from "./firebase-config.js";
-import { sha256 } from "./utils.js";
-import {
-    collection,
-    getDocs
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const colAdmins = collection(db, "admin_users");
+// Convertir password a SHA-256 (hex)
+export async function sha256(text) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hash = await crypto.subtle.digest("SHA-256", data);
+    return [...new Uint8Array(hash)]
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+}
 
-/* ================================
-   LEER SESIÓN
-   ================================ */
+// Guardar sesión
+export function guardarSesion(user) {
+    localStorage.setItem("fe_admin_user", JSON.stringify(user));
+}
+
+// Obtener sesión
 export function getCurrentUser() {
-    const raw = sessionStorage.getItem("fe_admin_user");
-    if (!raw) return null;
     try {
-        return JSON.parse(raw);
+        return JSON.parse(localStorage.getItem("fe_admin_user"));
     } catch {
         return null;
     }
 }
 
-/* ================================
-   INTENTAR LOGIN
-   ================================ */
-export async function intentarLogin(usuario, contraseña) {
-    const passHash = await sha256(contraseña);
+// Cerrar sesión
+export function logout() {
+    localStorage.removeItem("fe_admin_user");
+    location.reload();
+}
 
-    const snap = await getDocs(colAdmins);
+// Intento de login
+export async function intentarLogin(username, password) {
+    try {
+        const ref = doc(db, "admin_users", username);
+        const snap = await getDoc(ref);
 
-    const lista = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-    }));
+        if (!snap.exists()) return false;
 
-    const match = lista.find(
-        a => a.username === usuario && a.passwordHash === passHash
-    );
+        const data = snap.data();
+        const hashIngresado = await sha256(password);
 
-    if (!match) return false;
+        if (hashIngresado !== data.hash) {
+            return false;
+        }
 
-    sessionStorage.setItem(
-        "fe_admin_user",
-        JSON.stringify({ username: usuario })
-    );
+        const user = { username, role: data.role || "admin" };
+        guardarSesion(user);
+        return user;
 
-    return true;
+    } catch (err) {
+        console.error("Error login:", err);
+        return false;
+    }
 }
