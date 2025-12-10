@@ -1,59 +1,77 @@
-// ==============================
-// ADMIN AUTH - basado 100% en Firestore
-// ==============================
+// js/admin-auth.js
+"use strict";
+
 import { db } from "./firebase-config.js";
-import { doc, getDoc } 
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { sha256Hex } from "./utils.js";
+import {
+  collection,
+  query,
+  where,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ------ HASH SHA-256 ------
-async function sha256(text) {
-    const enc = new TextEncoder().encode(text);
-    const buff = await crypto.subtle.digest("SHA-256", enc);
-    return Array.from(new Uint8Array(buff))
-        .map(b => b.toString(16).padStart(2, "0"))
-        .join("");
-}
+const COL_ADMIN = collection(db, "admin_users");
 
-// ------ LOGIN ------
-export async function intentarLogin(username, password) {
-    try {
-        const ref = doc(db, "admin_users", username);
-        const snap = await getDoc(ref);
+// Clave en localStorage para la sesión
+const SESSION_KEY = "fe_admin_session";
 
-        if (!snap.exists()) return false;
-
-        const data = snap.data();
-
-        if (data.disabled) return false;
-
-        const hash = await sha256(password);
-
-        if (hash !== data.passwordHash) return false;
-
-        // Guardar sesión local
-        sessionStorage.setItem("fe_admin_user", JSON.stringify({
-            username: data.username,
-            role: data.role
-        }));
-
-        return true;
-
-    } catch (e) {
-        console.error("Error login:", e);
-        return false;
-    }
-}
-
-// ------ OBTENER USUARIO ACTUAL ------
+/** Devuelve el usuario actual de sesión (o null) */
 export function getCurrentUser() {
-    const raw = sessionStorage.getItem("fe_admin_user");
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
-    try { return JSON.parse(raw); }
-    catch { return null; }
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
-// ------ LOGOUT ------
+/** Guarda sesión en localStorage */
+function saveSession(userObj) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(userObj));
+}
+
+/** Limpia sesión */
 export function logoutAdmin() {
-    sessionStorage.removeItem("fe_admin_user");
-    window.location.reload();
+  localStorage.removeItem(SESSION_KEY);
+}
+
+/**
+ * Login:
+ *  - username: string (ej. "Anunez-adm")
+ *  - password: texto plano que será hasheado en SHA‑256
+ * Devuelve objeto { id, username, role } o null
+ */
+export async function intentarLogin(username, password) {
+  const userNorm = username.trim();
+  if (!userNorm || !password) return null;
+
+  // 1) Buscar documento por username
+  const q = query(COL_ADMIN, where("username", "==", userNorm));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+
+  const docSnap = snap.docs[0];
+  const data = docSnap.data();
+
+  if (data.disabled === true) {
+    return null;
+  }
+
+  // 2) Calcular hash local del password
+  const inputHash = await sha256Hex(password);
+
+  // 3) Comparar con passwordHash en Firestore
+  if (!data.passwordHash || data.passwordHash !== inputHash) {
+    return null;
+  }
+
+  const userInfo = {
+    id: docSnap.id,
+    username: data.username,
+    role: data.role || "Admin",
+  };
+
+  saveSession(userInfo);
+  return userInfo;
 }
