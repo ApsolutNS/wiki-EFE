@@ -5,29 +5,24 @@
   <title>Admin FE - Gestión de Artículos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ToastUI Editor (solo desde jsDelivr, compatible con tu CSP) -->
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/@toast-ui/editor@3.2.2/dist/toastui-editor.min.css" />
+  <!-- ToastUI Editor (CSS) -->
+  <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
 
-  <!-- Estilos del panel -->
-  <link rel="stylesheet" href="./css/admin.css" />
+  <!-- Estilos del panel admin -->
+  <link rel="stylesheet" href="css/admin.css" />
 </head>
 <body>
-  <!-- ================== LOGIN ================== -->
+  <!-- ============= LOGIN ============= -->
   <div id="loginScreen">
     <div class="login-card">
       <div class="login-logo-circle">FE</div>
       <div class="login-title">Acceso administrativo</div>
-      <div class="login-sub">
-        Inicia sesión para gestionar la base de conocimiento.
-      </div>
+      <div class="login-sub">Inicia sesión para gestionar la base de conocimiento.</div>
 
       <input class="login-input" id="loginUser" placeholder="Usuario" />
       <input class="login-input" id="loginPass" type="password" placeholder="Contraseña" />
 
-      <button class="login-btn" id="loginBtn" type="button">
-        Iniciar sesión
-      </button>
+      <button class="login-btn" id="loginBtn">Iniciar sesión</button>
 
       <div id="loginError" class="login-error" style="display:none;">
         Credenciales incorrectas o usuario deshabilitado.
@@ -39,7 +34,7 @@
     </div>
   </div>
 
-  <!-- ================== PANEL PRINCIPAL ================== -->
+  <!-- ============= PANEL ADMIN ============= -->
   <div id="panel" style="display:none;">
     <div class="shell">
       <!-- SIDEBAR -->
@@ -75,19 +70,22 @@
           <div class="sidebar-user">
             <div class="sidebar-avatar" id="sidebarAvatar">A</div>
             <div>
-              <div class="sidebar-user-name" id="sidebarName">Administrador</div>
-              <div class="sidebar-user-role">Panel interno FE</div>
+              <div class="sidebar-user-name" id="sidebarUserName">Administrador</div>
+              <div class="sidebar-user-role" id="sidebarUserRole">Panel interno FE</div>
             </div>
           </div>
           <button class="sidebar-footer-badge" type="button">
             v1.0 · Beta interna
+          </button>
+          <button id="btnLogout" class="btn-ghost btn-logout" type="button">
+            Cerrar sesión
           </button>
         </div>
       </aside>
 
       <!-- MAIN -->
       <main class="main">
-        <!-- TOP BAR -->
+        <!-- TOPBAR -->
         <header class="topbar">
           <div class="topbar-text">
             <div class="topbar-title">Panel de artículos</div>
@@ -99,21 +97,17 @@
             <button id="themeToggle" class="btn-ghost" type="button">
               Modo oscuro
             </button>
-            <button id="btnLogout" class="btn-ghost danger" type="button">
-              Cerrar sesión
-            </button>
           </div>
         </header>
 
+        <!-- CONTENIDO -->
         <div class="container">
-          <!-- LISTADO + MÉTRICAS -->
+          <!-- LISTADO -->
           <section class="card">
             <div class="card-header">
               <div>
                 <div class="card-title">Artículos registrados</div>
-                <div class="card-sub">
-                  Listado general con filtros y métricas básicas.
-                </div>
+                <div class="card-sub">Listado general con filtros y métricas básicas.</div>
               </div>
               <button id="btnNuevo" class="btn primary" type="button">
                 ➕ Nuevo artículo
@@ -170,7 +164,7 @@
             </div>
           </section>
 
-          <!-- FORMULARIO -->
+          <!-- FORM -->
           <section class="card card-form">
             <div class="card-title" id="formTitle">Nuevo artículo</div>
             <div class="card-sub">
@@ -197,7 +191,7 @@
 
             <div class="form-group mt-10">
               <label>Contenido completo</label>
-              <div id="editor" class="editor-host"></div>
+              <div id="wikiEditor" class="editor-container"></div>
             </div>
 
             <div class="form-grid mt-10">
@@ -231,8 +225,8 @@
     </div>
   </div>
 
-  <!-- MODAL -->
-  <div id="modal" class="modal">
+  <!-- MODAL VER ARTÍCULO -->
+  <div id="modal">
     <div class="modal-inner">
       <div class="modal-header">
         <div>
@@ -250,7 +244,7 @@
     </div>
   </div>
 
-  <!-- OVERLAY DE CARGA -->
+  <!-- OVERLAY CARGA -->
   <div id="loadingOverlay">
     <div class="loader-card">
       <div class="loader-title">Procesando…</div>
@@ -262,10 +256,12 @@
   </div>
 
   <!-- ToastUI Editor JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@toast-ui/editor@3.2.2/dist/toastui-editor-all.min.js"></script>
+  <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 
-  <!-- Firebase config y lógica del panel (módulos) -->
-  <script type="module" src="./js/firebase-config.js"></script>
-  <script type="module" src="./js/admin.js"></script>
+  <!-- Firebase + lógica -->
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/utils.js"></script>
+  <script type="module" src="js/admin-auth.js"></script>
+  <script type="module" src="js/admin.js"></script>
 </body>
 </html>
