@@ -8,7 +8,6 @@ const categoriaSelect  = document.getElementById("categoriaSelect");
 const sortSelect       = document.getElementById("sortSelect");
 const resultsEl        = document.getElementById("results");
 const topEl            = document.getElementById("topResults");
-const historyBox       = document.getElementById("historyBox");
 const paginationEl     = document.getElementById("pagination");
 const infoResultadosEl = document.getElementById("infoResultados");
 const infoOrdenEl      = document.getElementById("infoOrden");
@@ -24,7 +23,6 @@ let articulosAll = [];
 let articulosFiltrados = [];
 let paginaActual = 1;
 const POR_PAGINA = 12;
-
 let criterioOrden = "recientes";
 let filtroCategoria = "todas";
 
@@ -39,6 +37,7 @@ async function cargarArticulos() {
 
         renderRecomendados();
         aplicarFiltrosYBusqueda();
+
     } catch (e) {
         console.error("Error cargando artículos:", e);
     }
@@ -69,11 +68,14 @@ function aplicarFiltrosYBusqueda() {
     } else {
         articulosFiltrados = base
             .map(a => {
+                let txt = normalizar((a.resumen || "") + " " + (a.titulo || ""));
                 let score = 0;
+
                 if (normalizar(a.titulo).includes(q)) score += 5;
                 if (normalizar(a.resumen).includes(q)) score += 3;
                 if (normalizar(a.categoria).includes(q)) score += 2;
-                if (normalizar(a.contenido).includes(q)) score += 1;
+                if (txt.includes(q)) score += 1;
+
                 return { ...a, score };
             })
             .filter(a => a.score > 0)
@@ -100,11 +102,64 @@ function ordenarLista(lista) {
         );
     }
 
-    // Más recientes primero
     return arr.sort((a, b) => toDateSafe(b.fecha) - toDateSafe(a.fecha));
 }
 
-/* ================== RENDER PÁGINA ================== */
+/* ================== RENDER RESULTADOS ================== */
+function renderResults(items, target) {
+    target.innerHTML = items
+        .map(
+            a => `
+        <div class="card" data-id="${a.id}">
+            <div class="card-title">${a.titulo}</div>
+            <div class="card-meta-row">
+                <div class="card-category">${a.categoria}</div>
+            </div>
+            <div class="card-resumen">${a.resumen}</div>
+        </div>
+    `
+        )
+        .join("");
+
+    [...target.querySelectorAll(".card")].forEach(card => {
+        card.addEventListener("click", () => abrirArticulo(card.dataset.id));
+    });
+}
+
+/* ================== MODAL ================== */
+function abrirArticulo(id) {
+    const art = articulosAll.find(a => a.id === id);
+    if (!art) return;
+
+    modalTitle.textContent = art.titulo || "";
+    modalCategory.textContent = art.categoria || "";
+
+    modalContent.innerHTML = DOMPurify.sanitize(art.contenido || "", {
+        USE_PROFILES: { html: true },
+        ALLOWED_TAGS: [
+            "p", "b", "strong", "i", "u", "em", "br",
+            "ul", "ol", "li",
+            "span", "div",
+            "h1", "h2", "h3", "h4", "h5",
+            "table", "thead", "tbody", "tr", "th", "td",
+            "code", "pre",
+            "a"
+        ],
+        ALLOWED_ATTR: ["class", "href", "target", "rel"],
+        FORBID_TAGS: ["style", "script", "svg", "math", "iframe", "object", "embed"],
+        FORBID_ATTR: ["onerror", "onload", "onclick", "onfocus", "onmouseover"]
+    });
+
+    modal.style.display = "block";
+}
+
+closeModal.onclick = () => (modal.style.display = "none");
+
+window.addEventListener("click", e => {
+    if (e.target === modal) modal.style.display = "none";
+});
+
+/* ================== PAGINACIÓN ================== */
 function renderPagina() {
     const total = articulosFiltrados.length;
 
@@ -127,108 +182,17 @@ function renderPagina() {
         total
     )} de ${total} artículos.`;
 
-    infoOrdenEl.textContent = searchBar.value.trim()
-        ? "Ordenado por relevancia de búsqueda."
-        : criterioOrden === "recientes"
-        ? "Ordenado por más recientes."
-        : criterioOrden === "vistas"
-        ? "Ordenado por más vistos."
-        : "Ordenado por destacados.";
+    infoOrdenEl.textContent =
+        searchBar.value.trim()
+            ? "Ordenado por relevancia de búsqueda."
+            : criterioOrden === "recientes"
+            ? "Ordenado por más recientes."
+            : criterioOrden === "vistas"
+            ? "Ordenado por más vistos."
+            : "Ordenado por destacados.";
 
     renderPagination(totalPaginas);
 }
-
-/* ================== RENDER TARJETAS ================== */
-function renderResults(items, target) {
-    target.innerHTML = items
-        .map(
-            a => `
-        <div class="card" data-id="${a.id}">
-            <div class="card-title">${a.titulo}</div>
-
-            <div class="card-meta-row">
-                <div class="card-category">${a.categoria}</div>
-            </div>
-
-            <div class="card-resumen">${a.resumen}</div>
-        </div>
-    `
-        )
-        .join("");
-
-    [...target.querySelectorAll(".card")].forEach(card => {
-        card.addEventListener("click", () => abrirArticulo(card.dataset.id));
-    });
-}
-
-/* ================== PAGINACIÓN ================== */
-function renderPagination(totalPaginas) {
-    if (totalPaginas <= 1) {
-        paginationEl.innerHTML = "";
-        return;
-    }
-
-    let html = "";
-    for (let p = 1; p <= totalPaginas; p++) {
-        html += `
-            <button 
-                class="page-btn ${p === paginaActual ? "active" : ""}" 
-                data-page="${p}"
-            >
-                ${p}
-            </button>
-        `;
-    }
-
-    paginationEl.innerHTML = html;
-
-    [...paginationEl.querySelectorAll(".page-btn")].forEach(btn => {
-        btn.addEventListener("click", () => {
-            paginaActual = parseInt(btn.dataset.page, 10);
-            renderPagina();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        });
-    });
-}
-
-/* ================== MODAL ================== */
-function abrirArticulo(id) {
-    const art = articulosAll.find(a => a.id === id);
-    if (!art) return;
-
-    modalTitle.textContent = art.titulo || "";
-    modalCategory.textContent = art.categoria || "";
-
-    // 🔒 Sanitización fuerte con DOMPurify
-    modalContent.innerHTML = DOMPurify.sanitize(art.contenido || "", {
-        USE_PROFILES: { html: true },
-        ALLOWED_TAGS: [
-            "p", "b", "strong", "i", "u", "em", "br",
-            "ul", "ol", "li",
-            "span", "div",
-            "h1", "h2", "h3", "h4", "h5",
-            "table", "thead", "tbody", "tr", "th", "td",
-            "code", "pre",
-            "a"
-        ],
-        ALLOWED_ATTR: ["class", "href", "target", "rel"],
-        ALLOW_DATA_ATTR: false,
-        FORBID_TAGS: ["style", "script", "svg", "math", "iframe", "object", "embed"],
-        FORBID_ATTR: ["onerror", "onload", "onclick", "onfocus", "onmouseover"]
-    });
-
-    modal.style.display = "block";
-}
-
-closeModal.onclick = () => {
-    modal.style.display = "none";
-};
-
-window.addEventListener("click", e => {
-    if (e.target === modal) {
-        modal.style.display = "none";
-    }
-});
 
 /* ================== EVENTOS ================== */
 categoriaSelect.addEventListener("change", e => {
@@ -246,14 +210,6 @@ searchBar.addEventListener(
     debounce(() => aplicarFiltrosYBusqueda(), 300)
 );
 
-document.addEventListener("keydown", e => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
-        e.preventDefault();
-        searchBar.focus();
-    }
-});
-
-/* Admin */
 btnAdmin.addEventListener("click", () => {
     window.location.href = "admin.html";
 });
@@ -268,7 +224,6 @@ themeBtn.addEventListener("click", () => {
     localStorage.setItem("fe_dark_mode", isDark ? "1" : "0");
 });
 
-// Estado persistente
 if (localStorage.getItem("fe_dark_mode") === "1") {
     document.body.classList.add("dark");
     themeBtn.textContent = "Modo claro";
