@@ -1,6 +1,4 @@
-// ============================================
-// FIREBASE CONFIG
-// ============================================
+// js/firebase-config.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -13,8 +11,6 @@ const firebaseConfig = {
     appId: "1:508397908196:web:31d28a73ef56160963fcf1"
 };
 
-// Inicializar app SOLO UNA VEZ
 const app = initializeApp(firebaseConfig);
-
-// Exportación ÚNICA (antes tenías duplicada)
 export const db = getFirestore(app);
+
