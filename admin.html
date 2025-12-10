@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <title>Admin FE - Gestión</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' https://www.gstatic.com https://firebase.googleapis.com https://www.googleapis.com;
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: https:;
+  font-src 'self' https:;
+  connect-src 'self' https://firestore.googleapis.com https://firebase.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;
+  object-src 'none';
+  frame-ancestors 'none';
+  base-uri 'self';
+">
+
 
     <!-- QUILL LOCAL (NECESARIO POR CSP) -->
     <link rel="stylesheet" href="./libs/quill.snow.css">
