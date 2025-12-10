@@ -4,22 +4,8 @@
     <meta charset="UTF-8" />
     <title>Admin FE - Gestión</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- CSP SEGURA -->
-        <meta http-equiv="Content-Security-Policy" content="
-          default-src 'self';
-          script-src 'self' https://www.gstatic.com https://www.googleapis.com https://firebase.googleapis.com https://cdn.jsdelivr.net 'unsafe-eval';
-          style-src 'self' 'unsafe-inline';
-          img-src 'self' data: https:;
-          font-src 'self' https://fonts.gstatic.com https:;
-          connect-src 'self' https://firestore.googleapis.com https://firebase.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;
-          object-src 'none';
-          frame-ancestors 'none';
-          base-uri 'self';
-        ">
 
-
-    <!-- QUILL LOCAL PARA CSP -->
+    <!-- QUILL LOCAL -->
     <link rel="stylesheet" href="./libs/quill.snow.css">
     <script src="./libs/quill.js"></script>
 
@@ -29,15 +15,12 @@
 
 <body>
 
-<!-- BOTÓN MODO OSCURO -->
-<button id="themeToggle" class="theme-btn">Modo oscuro</button>
-
 <!-- LOGIN -->
 <div id="loginScreen">
     <div class="login-card">
         <div class="login-logo-circle">FE</div>
 
-        <h2 class="login-title">Acceso administrativo</h2>
+        <h2 style="text-align:center; margin-top:8px;">Acceso administrativo</h2>
 
         <input id="loginUser" placeholder="Correo" class="login-input" />
         <input id="loginPass" type="password" placeholder="Contraseña" class="login-input" />
@@ -54,7 +37,6 @@
 <div id="panel" style="display:none;">
     <div class="shell">
 
-        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo-circle">FE</div>
@@ -70,7 +52,6 @@
             </nav>
         </aside>
 
-        <!-- MAIN -->
         <main class="main">
             <header class="topbar">
                 <div class="topbar-title">Gestión de artículos</div>
@@ -78,7 +59,7 @@
 
             <div class="container">
 
-                <!-- LISTA -->
+                <!-- TABLA -->
                 <section class="card">
                     <div class="card-header">
                         <div class="card-title">Artículos registrados</div>
@@ -151,11 +132,9 @@
     </div>
 </div>
 
-<!-- JS -->
+<!-- FIREBASE + JS -->
 <script type="module" src="./js/firebase-config.js"></script>
-<script type="module" src="./js/admin-auth.js"></script>
 <script type="module" src="./js/admin.js"></script>
-<script type="module" src="./js/theme.js"></script>
 
 </body>
 </html>
