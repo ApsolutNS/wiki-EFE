@@ -5,8 +5,12 @@
   <title>Admin FE - Gestión de Artículos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ToastUI Editor (CSS) -->
-  <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+<!-- ToastUI desde jsDelivr (permitido por tu CSP) -->
+<link rel="stylesheet" 
+href="https://cdn.jsdelivr.net/npm/@toast-ui/editor@3.2.2/dist/toastui-editor.min.css" />
+
+<script src="https://cdn.jsdelivr.net/npm/@toast-ui/editor@3.2.2/dist/toastui-editor-all.min.js">
+</script>
 
   <!-- Estilos del panel admin -->
   <link rel="stylesheet" href="css/admin.css" />
@@ -254,9 +258,6 @@
       <div id="loadingText" class="loader-text">Cargando datos</div>
     </div>
   </div>
-
-  <!-- ToastUI Editor JS -->
-  <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 
   <!-- Firebase + lógica -->
   <script type="module" src="js/firebase-config.js"></script>
