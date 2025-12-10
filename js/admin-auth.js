@@ -1,56 +1,59 @@
+// ==============================
+// ADMIN AUTH - basado 100% en Firestore
+// ==============================
 import { db } from "./firebase-config.js";
-import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc } 
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* ============================
-   HASH SHA-256
-============================ */
-async function sha256(texto) {
-    const data = new TextEncoder().encode(texto);
-    const hash = await crypto.subtle.digest("SHA-256", data);
-    return Array.from(new Uint8Array(hash))
+// ------ HASH SHA-256 ------
+async function sha256(text) {
+    const enc = new TextEncoder().encode(text);
+    const buff = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(buff))
         .map(b => b.toString(16).padStart(2, "0"))
         .join("");
 }
 
-/* ============================
-   LOGIN AUTÉNTICO FIRESTORE
-============================ */
+// ------ LOGIN ------
 export async function intentarLogin(username, password) {
-    const passwordHash = await sha256(password);
+    try {
+        const ref = doc(db, "admin_users", username);
+        const snap = await getDoc(ref);
 
-    const q = query(
-        collection(db, "admin_users"),
-        where("username", "==", username),
-        where("passwordHash", "==", passwordHash),
-        where("disabled", "==", false)
-    );
+        if (!snap.exists()) return false;
 
-    const snap = await getDocs(q);
+        const data = snap.data();
 
-    if (snap.empty) return null;
+        if (data.disabled) return false;
 
-    const userData = snap.docs[0].data();
-    const uid = snap.docs[0].id;
+        const hash = await sha256(password);
 
-    const user = {
-        username: userData.username,
-        role: userData.role || "admin",
-        uid // ← TOKEN DE AUTORIZACIÓN
-    };
+        if (hash !== data.passwordHash) return false;
 
-    localStorage.setItem("fe_admin_user", JSON.stringify(user));
+        // Guardar sesión local
+        sessionStorage.setItem("fe_admin_user", JSON.stringify({
+            username: data.username,
+            role: data.role
+        }));
 
-    return user;
+        return true;
+
+    } catch (e) {
+        console.error("Error login:", e);
+        return false;
+    }
 }
 
-/* Obtener usuario autenticado */
+// ------ OBTENER USUARIO ACTUAL ------
 export function getCurrentUser() {
-    const saved = localStorage.getItem("fe_admin_user");
-    if (!saved) return null;
-    return JSON.parse(saved);
+    const raw = sessionStorage.getItem("fe_admin_user");
+    if (!raw) return null;
+    try { return JSON.parse(raw); }
+    catch { return null; }
 }
 
-/* LOGOUT */
-export function logout() {
-    localStorage.removeItem("fe_admin_user");
+// ------ LOGOUT ------
+export function logoutAdmin() {
+    sessionStorage.removeItem("fe_admin_user");
+    window.location.reload();
 }
