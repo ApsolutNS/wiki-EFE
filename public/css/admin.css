@@ -1,0 +1,358 @@
+/* ======================================================
+   ADMIN.CSS — Panel Administrativo FE + Estilo macOS
+   ====================================================== */
+
+/* ---------------------------
+   VARIABLES PRINCIPALES
+--------------------------- */
+:root {
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --text: #1a1d21;
+    --text-muted: #6b7280;
+    --primary: #0f4c81;
+    --primary-light: #4fa3ff;
+    --border: #e5e7eb;
+    --radius: 12px;
+    --shadow: 0 10px 30px rgba(0,0,0,0.06);
+    --sidebar-bg: #ffffffbb;
+}
+
+/* MODO OSCURO */
+body.dark {
+    --bg: #0d1117;
+    --card: #161b22;
+    --text: #e5e7eb;
+    --text-muted: #9ca3af;
+    --border: #252932;
+    --shadow: 0 15px 40px rgba(0,0,0,0.45);
+    --sidebar-bg: #161b22cc;
+}
+
+/* ---------------------------
+   BASE
+--------------------------- */
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.25s ease, color 0.25s ease;
+    overflow: hidden;
+}
+
+h2, h3, h4 { margin: 0; }
+
+/* ---------------------------
+   LOGIN
+--------------------------- */
+#loginScreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 20px;
+}
+
+.login-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 32px;
+    width: 340px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    text-align: center;
+}
+
+.login-logo-circle {
+    width: 60px;
+    height: 60px;
+    background: var(--primary);
+    color: white;
+    font-weight: bold;
+    font-size: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+}
+
+.login-input {
+    width: 100%;
+    margin-top: 12px;
+    padding: 11px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+}
+
+.login-btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.18s;
+}
+.login-btn:hover {
+    background: var(--primary-light);
+}
+
+.login-error {
+    margin-top: 12px;
+    color: #d60000;
+    font-size: 14px;
+}
+
+/* ---------------------------
+   SHELL APP
+--------------------------- */
+.shell {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ---------------------------
+   SIDEBAR ESTILO iCLOUD
+--------------------------- */
+.sidebar {
+    width: 260px;
+    backdrop-filter: blur(14px);
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 28px;
+}
+
+.sidebar-logo-circle {
+    width: 40px;
+    height: 40px;
+    background: var(--primary);
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-title {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.sidebar-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.sidebar-item {
+    width: 100%;
+    text-align: left;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text);
+    transition: 0.15s;
+}
+
+.sidebar-item:hover {
+    background: rgba(60,120,255,0.10);
+}
+
+.sidebar-item.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* ---------------------------
+   MAIN AREA
+--------------------------- */
+.main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+.topbar {
+    margin-bottom: 18px;
+}
+
+.topbar-title {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+/* ---------------------------
+   CARDS
+--------------------------- */
+.card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.search-input {
+    width: 100%;
+    margin: 12px 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-size: 14px;
+}
+
+/* ---------------------------
+   FORMULARIO
+--------------------------- */
+.input, .textarea, select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--text);
+}
+
+.textarea {
+    min-height: 90px;
+}
+
+/* QUILL EDITOR */
+#editor {
+    height: 240px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 14px;
+}
+
+/* ---------------------------
+   BOTONES
+--------------------------- */
+.btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.14s;
+}
+
+.btn.primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn.primary:hover {
+    background: var(--primary-light);
+}
+
+.btn.danger {
+    background: #d60000;
+    color: white;
+}
+
+.btn.ghost {
+    background: #e5e7eb;
+}
+
+/* ---------------------------
+   TABLA
+--------------------------- */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.tabla {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabla th {
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.tabla td {
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.tabla tr:hover td {
+    background: rgba(0,0,0,0.04);
+}
+
+/* ---------------------------
+   MODAL
+--------------------------- */
+.modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.42);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-inner {
+    width: 70%;
+    max-height: 82vh;
+    overflow-y: auto;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body {
+    margin-top: 12px;
+    line-height: 1.6;
+}
