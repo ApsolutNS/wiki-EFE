@@ -1,9 +1,9 @@
 /* ============================================================
-   ADMIN.JS — Panel FE usando Firebase Auth + Firestore + Quill
-   Compatible 100% con CSP (sin inline JS)
-   ============================================================ */
+   ADMIN.JS — Panel FE con Firebase Auth + Firestore + Quill
+============================================================ */
 
 import { auth, db } from "./firebase-config.js";
+
 import {
     signInWithEmailAndPassword,
     onAuthStateChanged,
@@ -21,121 +21,89 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* ============================================================
-   ELEMENTOS DOM
-   ============================================================ */
-const loginScreen      = document.getElementById("loginScreen");
-const panel            = document.getElementById("panel");
-const loginBtn         = document.getElementById("loginBtn");
-const loginError       = document.getElementById("loginError");
+/* DOM */
+const loginScreen = document.getElementById("loginScreen");
+const panel = document.getElementById("panel");
+const loginBtn = document.getElementById("loginBtn");
+const loginError = document.getElementById("loginError");
+const logoutBtn = document.getElementById("logoutBtn");
 
-const titulo           = document.getElementById("titulo");
-const categoria        = document.getElementById("categoria");
-const resumen          = document.getElementById("resumen");
-const visibleAgentes   = document.getElementById("visibleAgentes");
-const destacado        = document.getElementById("destacado");
-const articuloId       = document.getElementById("articuloId");
+const titulo = document.getElementById("titulo");
+const categoria = document.getElementById("categoria");
+const resumen = document.getElementById("resumen");
+const visibleAgentes = document.getElementById("visibleAgentes");
+const destacado = document.getElementById("destacado");
+const articuloId = document.getElementById("articuloId");
 
-const searchTabla      = document.getElementById("searchTabla");
-const tablaArticulos   = document.getElementById("tablaArticulos");
+const searchTabla = document.getElementById("searchTabla");
+const tablaArticulos = document.getElementById("tablaArticulos");
 
-const btnNuevo         = document.getElementById("btnNuevo");
-const btnGuardar       = document.getElementById("btnGuardar");
+const btnNuevo = document.getElementById("btnNuevo");
+const btnGuardar = document.getElementById("btnGuardar");
 
-const modal            = document.getElementById("modal");
-const modalTitle       = document.getElementById("modalTitle");
-const modalContent     = document.getElementById("modalContent");
-const closeModal       = document.getElementById("closeModal");
+const modal = document.getElementById("modal");
+const modalTitle = document.getElementById("modalTitle");
+const modalContent = document.getElementById("modalContent");
+const closeModal = document.getElementById("closeModal");
 
-const logoutBtn        = document.getElementById("logoutBtn");
-
-/* ============================================================
-   QUILL
-   ============================================================ */
 let quill;
 
+/* Inicializar Quill */
 document.addEventListener("DOMContentLoaded", () => {
     quill = new Quill("#editor", {
         theme: "snow",
-        placeholder: "Escribe el contenido completo del artículo…"
+        placeholder: "Escribe el contenido…"
     });
 
-    // Solo carga artículos si ya hay usuario logueado
-    onAuthStateChanged(auth, user => {
-        if (user) cargarArticulos();
-    });
+    cargarArticulos();
 });
 
-/* ============================================================
-   LOGIN
-   ============================================================ */
-loginBtn.addEventListener("click", async () => {
+/* LOGIN */
+loginBtn.onclick = async () => {
     const email = document.getElementById("loginUser").value.trim();
-    const pass  = document.getElementById("loginPass").value.trim();
-
-    if (!email || !pass) {
-        loginError.textContent = "Ingrese correo y contraseña.";
-        loginError.style.display = "block";
-        return;
-    }
+    const pass = document.getElementById("loginPass").value.trim();
 
     try {
         await signInWithEmailAndPassword(auth, email, pass);
         loginError.style.display = "none";
-    } catch (e) {
-        console.error(e);
-        loginError.textContent = "Credenciales incorrectas.";
+    } catch {
         loginError.style.display = "block";
     }
-});
+};
 
-/* ============================================================
-   ESTADO DE AUTENTICACIÓN
-   ============================================================ */
+/* Estado Login */
 onAuthStateChanged(auth, user => {
     if (user) {
         loginScreen.style.display = "none";
         panel.style.display = "block";
     } else {
-        loginScreen.style.display = "flex";
         panel.style.display = "none";
+        loginScreen.style.display = "flex";
     }
 });
 
-/* ============================================================
-   LOGOUT
-   ============================================================ */
-logoutBtn.addEventListener("click", () => {
-    signOut(auth);
-});
+/* Logout */
+logoutBtn.onclick = () => signOut(auth);
 
 /* ============================================================
    CARGAR ARTÍCULOS
-   ============================================================ */
+============================================================ */
 let articulosCache = [];
 
 async function cargarArticulos() {
     const snap = await getDocs(collection(db, "articulos"));
-
-    articulosCache = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-    }));
-
+    articulosCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     renderTabla(articulosCache);
 }
 
-/* ============================================================
-   RENDER TABLA
-   ============================================================ */
+/* TABLA */
 function renderTabla(lista) {
     tablaArticulos.innerHTML = lista.map(a => {
         const fecha = a.fecha?.toDate?.().toLocaleDateString("es-PE") || "-";
-
         return `
         <tr>
-            <td>${escapeHTML(a.titulo)}</td>
-            <td>${escapeHTML(a.categoria)}</td>
+            <td>${a.titulo}</td>
+            <td>${a.categoria}</td>
             <td>${a.visibleAgentes ? "Sí" : "No"}</td>
             <td>${a.destacado ? "⭐" : "—"}</td>
             <td>${fecha}</td>
@@ -147,80 +115,56 @@ function renderTabla(lista) {
         </tr>`;
     }).join("");
 
-    tablaArticulos.querySelectorAll("[data-edit]").forEach(b =>
-        b.onclick = () => editarArticulo(b.dataset.edit)
-    );
-    tablaArticulos.querySelectorAll("[data-view]").forEach(b =>
-        b.onclick = () => verArticulo(b.dataset.view)
-    );
-    tablaArticulos.querySelectorAll("[data-del]").forEach(b =>
-        b.onclick = () => eliminarArticulo(b.dataset.del)
-    );
+    tablaArticulos.querySelectorAll("[data-edit]")
+        .forEach(btn => btn.onclick = () => editarArticulo(btn.dataset.edit));
+
+    tablaArticulos.querySelectorAll("[data-view]")
+        .forEach(btn => btn.onclick = () => verArticulo(btn.dataset.view));
+
+    tablaArticulos.querySelectorAll("[data-del]")
+        .forEach(btn => btn.onclick = () => eliminarArticulo(btn.dataset.del));
 }
 
-/* ============================================================
-   VER ARTÍCULO — Modal seguro con sanitización
-   ============================================================ */
+/* MODAL */
 function verArticulo(id) {
-    const art = articulosCache.find(a => a.id === id);
-    if (!art) return;
-
-    modalTitle.textContent = art.titulo;
-
-    // Sanitizar contenido HTML para evitar XSS
-    modalContent.innerHTML = DOMPurify.sanitize(art.contenido || "");
-
+    const a = articulosCache.find(x => x.id === id);
+    modalTitle.textContent = a.titulo;
+    modalContent.innerHTML = a.contenido;
     modal.style.display = "flex";
 }
+closeModal.onclick = () => modal.style.display = "none";
 
-closeModal.onclick = () => {
-    modal.style.display = "none";
-};
-
-/* ============================================================
-   EDITAR ARTÍCULO
-   ============================================================ */
+/* EDITAR */
 async function editarArticulo(id) {
-    const ref = doc(db, "articulos", id);
-    const snap = await getDoc(ref);
-
-    if (!snap.exists()) {
-        alert("Artículo no encontrado.");
-        return;
-    }
+    const snap = await getDoc(doc(db, "articulos", id));
+    if (!snap.exists()) return;
 
     const a = snap.data();
-
-    articuloId.value     = id;
-    titulo.value         = a.titulo;
-    categoria.value      = a.categoria;
-    resumen.value        = a.resumen;
+    articuloId.value = id;
+    titulo.value = a.titulo;
+    categoria.value = a.categoria;
+    resumen.value = a.resumen;
     visibleAgentes.value = a.visibleAgentes ? "true" : "false";
-    destacado.value      = a.destacado ? "true" : "false";
+    destacado.value = a.destacado ? "true" : "false";
+
     quill.root.innerHTML = a.contenido || "";
 
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-/* ============================================================
-   LIMPIAR FORMULARIO
-   ============================================================ */
-btnNuevo.onclick = limpiarFormulario;
-
-function limpiarFormulario() {
-    articuloId.value     = "";
-    titulo.value         = "";
-    categoria.value      = "";
-    resumen.value        = "";
+/* NUEVO */
+btnNuevo.onclick = () => {
+    articuloId.value = "";
+    titulo.value = "";
+    categoria.value = "";
+    resumen.value = "";
     visibleAgentes.value = "true";
-    destacado.value      = "false";
+    destacado.value = "false";
     quill.root.innerHTML = "";
-}
+};
 
-/* ============================================================
-   CREAR / ACTUALIZAR
-   ============================================================ */
-btnGuardar.addEventListener("click", async () => {
+/* GUARDAR */
+btnGuardar.onclick = async () => {
     const data = {
         titulo: titulo.value.trim(),
         categoria: categoria.value.trim(),
@@ -232,64 +176,33 @@ btnGuardar.addEventListener("click", async () => {
         updatedAt: serverTimestamp()
     };
 
-    if (!data.titulo || !data.categoria || !data.resumen) {
-        alert("Completa todos los campos obligatorios.");
-        return;
+    if (!data.titulo || !data.categoria || !data.resumen)
+        return alert("Completa todos los campos.");
+
+    if (articuloId.value) {
+        await updateDoc(doc(db, "articulos", articuloId.value), data);
+        alert("Artículo actualizado.");
+    } else {
+        await addDoc(collection(db, "articulos"), data);
+        alert("Artículo creado.");
     }
 
-    try {
-        if (articuloId.value) {
-            await updateDoc(doc(db, "articulos", articuloId.value), data);
-            alert("Artículo actualizado.");
-        } else {
-            await addDoc(collection(db, "articulos"), {
-                ...data,
-                createdAt: serverTimestamp()
-            });
-            alert("Artículo creado.");
-        }
+    cargarArticulos();
+};
 
-        limpiarFormulario();
-        cargarArticulos();
-
-    } catch (e) {
-        console.error(e);
-        alert("Error al guardar: " + e.message);
-    }
-});
-
-/* ============================================================
-   ELIMINAR
-   ============================================================ */
+/* ELIMINAR */
 async function eliminarArticulo(id) {
-    if (!confirm("¿Eliminar artículo?")) return;
-
+    if (!confirm("¿Eliminar?")) return;
     await deleteDoc(doc(db, "articulos", id));
-    alert("Eliminado.");
-
     cargarArticulos();
 }
 
-/* ============================================================
-   BUSCADOR
-   ============================================================ */
-searchTabla.addEventListener("input", () => {
-    const q = searchTabla.value.trim().toLowerCase();
-
+/* BUSCADOR */
+searchTabla.oninput = () => {
+    const q = searchTabla.value.toLowerCase();
     const filtrados = articulosCache.filter(a =>
-        (a.titulo || "").toLowerCase().includes(q) ||
-        (a.categoria || "").toLowerCase().includes(q)
+        a.titulo.toLowerCase().includes(q) ||
+        a.categoria.toLowerCase().includes(q)
     );
-
     renderTabla(filtrados);
-});
-
-/* ============================================================
-   FUNCIÓN DE SANITIZACIÓN SIMPLE PARA TEXTO
-   ============================================================ */
-function escapeHTML(str) {
-    return (str || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-}
+};
