@@ -1,56 +1,54 @@
-import { auth } from "./firebase-config.js";
-import { db } from "./firebase-config.js";
-import { signInWithEmailAndPassword, onAuthStateChanged } 
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+// =============================
+// admin-auth.js (FINAL)
+// =============================
+import { auth, db } from "./firebase-config.js";
+import {
+    signInWithEmailAndPassword,
+    signOut,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-import { doc, getDoc } 
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+    doc,
+    getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* ====================================================
-   Inicio de sesión usando Firebase Authentication
-   ==================================================== */
+/* ============================================================
+   LOGIN (email + contraseña con Firebase Auth)
+   ============================================================ */
 export async function intentarLogin(email, password) {
     try {
-        // Login con Firebase Auth
         const cred = await signInWithEmailAndPassword(auth, email, password);
         const user = cred.user;
 
-        // Validación de permisos en Firestore
+        // Validar permisos en Firestore por UID
         const ref = doc(db, "admin_users", user.uid);
         const snap = await getDoc(ref);
 
-        if (!snap.exists()) {
-            console.warn("UID sin permisos admin");
+        if (!snap.exists() || snap.data().activo !== true) {
+            console.warn("Usuario sin permisos admin");
+            await signOut(auth);
             return false;
         }
 
-        const data = snap.data();
-        if (!data.activo) {
-            console.warn("Usuario desactivado");
-            return false;
-        }
-
-        // Guardar sesión local
-        localStorage.setItem("fe_admin_user", user.uid);
+        // Guardar UID en sesión local
+        localStorage.setItem("fe_admin_uid", user.uid);
 
         return true;
+
     } catch (e) {
         console.error("Error login:", e);
         return false;
     }
 }
 
-/* ====================================================
-   Obtener usuario desde sesión local
-   ==================================================== */
+/* ============================================================
+   Sesión
+   ============================================================ */
 export function getCurrentUser() {
-    return localStorage.getItem("fe_admin_user");
+    return localStorage.getItem("fe_admin_uid");
 }
 
-/* ====================================================
-   Logout
-   ==================================================== */
 export function logoutAdmin() {
-    localStorage.removeItem("fe_admin_user");
-    auth.signOut();
+    localStorage.removeItem("fe_admin_uid");
+    return signOut(auth);
 }
