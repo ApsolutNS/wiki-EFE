@@ -1,36 +1,39 @@
-export function toDateSafe(f) {
-    if (!f) return new Date(0);
-    if (typeof f.toDate === "function") return f.toDate();
-    return new Date(f);
+// js/utils.js
+"use strict";
+
+/** Normaliza texto para búsqueda */
+export function normalizar(str) {
+  return (str || "")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
 }
 
-export function normalizar(text = "") {
-    return text
-        .toString()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
+/** Convierte objeto Firestore Timestamp o string ISO a Date seguro */
+export function toDateSafe(value) {
+  if (!value) return new Date(0);
+  if (value.toDate) return value.toDate();
+  if (typeof value === "string") return new Date(value);
+  return new Date(value);
 }
 
-/* Debounce para buscador */
+/** Debounce genérico */
 export function debounce(fn, delay = 300) {
-    let timer;
-    return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => fn(...args), delay);
-    };
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
 }
 
-// Generar sessionId único por navegador para rastrear todo lo que un usuario hace en la sesión actual.
-function generateSessionId() {
-    return 'sess-' + crypto.randomUUID();
+/** SHA‑256 en HEX (para comparar con passwordHash en admin_users) */
+export async function sha256Hex(text) {
+  const enc = new TextEncoder();
+  const data = enc.encode(text);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
-
-let sessionId = localStorage.getItem("fe_session_id");
-
-if (!sessionId) {
-    sessionId = generateSessionId();
-    localStorage.setItem("fe_session_id", sessionId);
-}
-
-export { sessionId };
